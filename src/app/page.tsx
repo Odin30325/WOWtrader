@@ -1,0 +1,1575 @@
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  Award,
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  Download,
+  Filter,
+  Flame,
+  Hammer,
+  Layers,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  Sparkles,
+  TrendingUp,
+  UploadCloud,
+  Users,
+} from "lucide-react";
+import { WowMoney } from "@/components/WowMoney";
+import { IntradayChart } from "@/components/IntradayChart";
+import { formatCopperText } from "@/lib/stats";
+
+interface ArbitrageRow {
+  item_id: number;
+  name_es: string;
+  icon_url: string;
+  category: string;
+  vendor_sell_price: number;
+  current_min_price: number;
+  current_p10_price: number;
+  current_median_price: number;
+  total_quantity: number;
+  num_listings: number;
+  valley_hour: number;
+  valley_p10: number;
+  peak_hour: number;
+  peak_p10: number;
+  net_profit_copper: number;
+  net_roi_pct: number;
+  has_bait_warning: boolean;
+  bait_discount_pct: number;
+  last_snapshot_time: string;
+  last_source: string;
+}
+
+interface ProfessionRecipe {
+  recipe_id: number;
+  name_es: string;
+  profession: "Ingeniería" | "Minería";
+  is_forever_exclusive: boolean;
+  output_item_id: number;
+  output_name_es: string;
+  output_icon_url: string;
+  output_quantity: number;
+  output_unit_p10: number;
+  output_market_volume: number;
+  reagents: Array<{
+    item_id: number;
+    name_es: string;
+    icon_url: string;
+    count: number;
+    unit_p10: number;
+    subtotal_p10: number;
+    available_quantity: number;
+  }>;
+  total_craft_cost: number;
+  gross_sale_value: number;
+  net_sale_after_ah_cut: number;
+  net_profit_copper: number;
+  net_roi_pct: number;
+  is_profitable: boolean;
+}
+
+interface LeaderboardEntry {
+  uploaded_by: string;
+  snapshots_count: number;
+  items_audited: number;
+  points: number;
+  last_upload_at: string;
+}
+
+interface MarketOverview {
+  house_id: number;
+  total_items_tracked: number;
+  total_snapshots: number;
+  total_market_volume: number;
+  last_blizzard_sync: string | null;
+  last_guild_sync: string | null;
+  categories: string[];
+}
+
+interface ItemDetailData {
+  item: {
+    item_id: number;
+    name_es: string;
+    icon_url: string;
+    category: string;
+    vendor_sell_price: number;
+    current_p10: number;
+    current_min: number;
+    current_median: number;
+    current_quantity: number;
+    num_listings: number;
+    valley_hour: number;
+    valley_p10: number;
+    peak_hour: number;
+    peak_p10: number;
+    net_profit_copper: number;
+    net_roi_pct: number;
+  };
+  timeseries: Array<{
+    snapshot_time: string;
+    unix_time: number;
+    min_price: number;
+    p10_price: number;
+    median_price: number;
+    total_quantity: number;
+    source: string;
+  }>;
+  hourlyCurve24h: Array<{
+    hour_of_day: number;
+    avg_p10: number;
+    avg_min: number;
+    avg_median: number;
+    avg_quantity: number;
+  }>;
+  heatmap7x24: Array<{
+    day_of_week: number;
+    hour_of_day: number;
+    avg_p10: number;
+    avg_quantity: number;
+  }>;
+}
+
+const DAY_LABELS = [
+  "Dom (Raid)",
+  "Lun (Valle)",
+  "Mar (Reset)",
+  "Mié (Raid)",
+  "Jue (Raid)",
+  "Vie",
+  "Sáb",
+];
+
+const SAMPLE_CLAN_LUA = `-- Escaneo rápido de ForeverMarketAudit (Clan Edition - TOC 106001)
+ForeverMarketAuditDB = {
+  ["meta"] = {
+    ["player"] = "Odin",
+    ["faction"] = "Alliance",
+    ["houseId"] = 110,
+    ["region"] = "us",
+    ["version"] = "1.0.0",
+    ["lastScanTime"] = ${Math.floor(Date.now() / 1000)},
+  },
+  ["latestItems"] = {
+    [2770] = {
+      ["name"] = "Mena de cobre",
+      ["offers"] = {
+        { ["unitPrice"] = 1, ["quantity"] = 1 },
+        { ["unitPrice"] = 47, ["quantity"] = 240 },
+        { ["unitPrice"] = 53, ["quantity"] = 580 },
+      },
+    },
+    [260784] = {
+      ["name"] = "Tiras C-GUR",
+      ["offers"] = {
+        { ["unitPrice"] = 5, ["quantity"] = 1 },
+        { ["unitPrice"] = 195, ["quantity"] = 120 },
+        { ["unitPrice"] = 230, ["quantity"] = 310 },
+      },
+    },
+    [260792] = {
+      ["name"] = "Dinamita C-GUR",
+      ["offers"] = {
+        { ["unitPrice"] = 460, ["quantity"] = 95 },
+        { ["unitPrice"] = 520, ["quantity"] = 210 },
+      },
+    },
+    [260803] = {
+      ["name"] = "Granada para tontos",
+      ["offers"] = {
+        { ["unitPrice"] = 1890, ["quantity"] = 70 },
+        { ["unitPrice"] = 2150, ["quantity"] = 140 },
+      },
+    },
+    [279950] = {
+      ["name"] = "Robot de componentes",
+      ["offers"] = {
+        { ["unitPrice"] = 23900, ["quantity"] = 22 },
+        { ["unitPrice"] = 26400, ["quantity"] = 55 },
+      },
+    },
+    [4371] = {
+      ["name"] = "Tubo de bronce",
+      ["offers"] = {
+        { ["unitPrice"] = 1320, ["quantity"] = 45 },
+        { ["unitPrice"] = 1480, ["quantity"] = 110 },
+      },
+    },
+  },
+}`;
+
+export default function ForeverMarketDashboard() {
+  const [activeTab, setActiveTab] = useState<
+    "radar" | "detail" | "professions" | "clan"
+  >("radar");
+
+  const [houseId, setHouseId] = useState<number>(110);
+  const [minLiquidity, setMinLiquidity] = useState<number>(50);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Todas");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  const [overview, setOverview] = useState<MarketOverview | null>(null);
+  const [radar, setRadar] = useState<ArbitrageRow[]>([]);
+  const [professions, setProfessions] = useState<ProfessionRecipe[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loadingDashboard, setLoadingDashboard] = useState<boolean>(true);
+  const [syncingBlizzard, setSyncingBlizzard] = useState<boolean>(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  // Vista 2: Detalle de Ítem (Curva 24h y Heatmap 7x24)
+  const [selectedItemId, setSelectedItemId] = useState<number>(2770);
+  const [itemDetail, setItemDetail] = useState<ItemDetailData | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
+
+  // Vista 3: Filtros de Laboratorio de Profesiones
+  const [profFilter, setProfFilter] = useState<"Todas" | "Ingeniería" | "Minería">(
+    "Todas"
+  );
+  const [onlyForeverRecipes, setOnlyForeverRecipes] = useState<boolean>(false);
+  const [onlyProfitableRecipes, setOnlyProfitableRecipes] =
+    useState<boolean>(false);
+
+  // Vista 4: Zona del Clan (Uploader Drag & Drop)
+  const [clanPlayerName, setClanPlayerName] = useState<string>("Odin");
+  const [dragActive, setDragActive] = useState<boolean>(false);
+  const [uploadingLua, setUploadingLua] = useState<boolean>(false);
+  const [uploadStatus, setUploadStatus] = useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
+
+  const fetchDashboardData = useCallback(async () => {
+    setLoadingDashboard(true);
+    try {
+      const params = new URLSearchParams({
+        houseId: String(houseId),
+        minLiquidity: String(minLiquidity),
+        category: selectedCategory,
+        search: searchQuery,
+      });
+      const res = await fetch(`/api/market/dashboard?${params.toString()}`);
+      const data = await res.json();
+      if (res.ok) {
+        setOverview(data.overview);
+        setRadar(data.radar || []);
+        setProfessions(data.professions || []);
+        setLeaderboard(data.leaderboard || []);
+      }
+    } catch (err) {
+      console.error("Error cargando dashboard:", err);
+    } finally {
+      setLoadingDashboard(false);
+    }
+  }, [houseId, minLiquidity, selectedCategory, searchQuery]);
+
+  const fetchItemDetail = useCallback(
+    async (itemId: number) => {
+      setLoadingDetail(true);
+      try {
+        const res = await fetch(
+          `/api/market/item/${itemId}?houseId=${houseId}`
+        );
+        if (res.ok) {
+          const data = (await res.json()) as ItemDetailData;
+          setItemDetail(data);
+        }
+      } catch (err) {
+        console.error("Error cargando detalle de ítem:", err);
+      } finally {
+        setLoadingDetail(false);
+      }
+    },
+    [houseId]
+  );
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    fetchItemDetail(selectedItemId);
+  }, [selectedItemId, fetchItemDetail]);
+
+  const handleOpenItemDetail = (itemId: number) => {
+    setSelectedItemId(itemId);
+    setActiveTab("detail");
+  };
+
+  const handleSyncBlizzardNow = async () => {
+    setSyncingBlizzard(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch("/api/ingest/blizzard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ houseId, rulesetId: 1, force: false }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.notModified) {
+          setSyncMessage(
+            `Sin cambios desde el último corte horario de Blizzard (${data.lastModifiedHeader}). Límite de API respetado (HTTP 304).`
+          );
+        } else {
+          setSyncMessage(
+            `¡Sincronizado! ${Number(
+              data.rawEquipmentAuctions + data.rawCommodityAuctions
+            ).toLocaleString()} subastas procesadas (${data.aggregatedItemsCount} ítems únicos).`
+          );
+        }
+        await fetchDashboardData();
+        await fetchItemDetail(selectedItemId);
+      } else {
+        setSyncMessage(`Error: ${data.error || "Fallo al sincronizar"}`);
+      }
+    } catch {
+      setSyncMessage("Error de red al conectar con el poller.");
+    } finally {
+      setSyncingBlizzard(false);
+    }
+  };
+
+  const handleUploadSavedVariablesContent = async (luaText: string) => {
+    setUploadingLua(true);
+    setUploadStatus(null);
+    try {
+      const res = await fetch("/api/ingest/addon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: luaText,
+          player: clanPlayerName || "Odin",
+          houseId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUploadStatus({
+          ok: true,
+          message: `¡Auditoría recibida! Jugador '${data.uploadedBy}' aportó ${data.itemsProcessed} ítems al corte ${new Date(
+            data.snapshotTimeISO
+          ).toLocaleTimeString()} UTC (+${data.itemsProcessed * 5 + 50} pts en el Leaderboard).`,
+        });
+        if (data.leaderboard) {
+          setLeaderboard(data.leaderboard);
+        }
+        await fetchDashboardData();
+        await fetchItemDetail(selectedItemId);
+      } else {
+        setUploadStatus({
+          ok: false,
+          message: data.error || "Error al procesar el archivo Lua.",
+        });
+      }
+    } catch {
+      setUploadStatus({
+        ok: false,
+        message: "Error de conexión al enviar ForeverMarketAudit.lua.",
+      });
+    } finally {
+      setUploadingLua(false);
+    }
+  };
+
+  const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    await handleUploadSavedVariablesContent(text);
+  };
+
+  const handleFileInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    await handleUploadSavedVariablesContent(text);
+  };
+
+  const filteredProfessions = professions.filter((p) => {
+    if (profFilter !== "Todas" && p.profession !== profFilter) return false;
+    if (onlyForeverRecipes && !p.is_forever_exclusive) return false;
+    if (onlyProfitableRecipes && !p.is_profitable) return false;
+    return true;
+  });
+
+  // Calcular rango para colorear el Heatmap 7x24 en la Vista 2
+  const heatmapValues =
+    itemDetail?.heatmap7x24.map((h) => h.avg_p10).filter((v) => v > 0) || [];
+  const minHeatP10 =
+    heatmapValues.length > 0 ? Math.min(...heatmapValues) : 1;
+  const maxHeatP10 =
+    heatmapValues.length > 0 ? Math.max(...heatmapValues) : 100;
+
+  const getHeatmapCellColor = (val: number) => {
+    if (!val || maxHeatP10 <= minHeatP10) {
+      return "bg-slate-800/70 text-slate-300 border-slate-700/50";
+    }
+    const ratio = (val - minHeatP10) / (maxHeatP10 - minHeatP10);
+    if (ratio <= 0.22) {
+      return "bg-emerald-500/30 text-emerald-200 border-emerald-500/50 font-semibold"; // Hora Valle (Compra)
+    }
+    if (ratio <= 0.42) {
+      return "bg-teal-500/20 text-teal-200 border-teal-500/30";
+    }
+    if (ratio <= 0.68) {
+      return "bg-slate-800/80 text-slate-300 border-slate-700/60";
+    }
+    if (ratio <= 0.85) {
+      return "bg-amber-500/25 text-amber-200 border-amber-500/40";
+    }
+    return "bg-rose-500/35 text-rose-100 border-rose-500/60 font-semibold"; // Hora Pico Raid (Venta)
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#060a12] text-slate-100">
+      {/* BARRA SUPERIOR / HEADER */}
+      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-[#080d1a]/95 backdrop-blur-md">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-sky-500/20 border border-sky-400/30">
+              <TrendingUp className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">
+                  Forever Market Audit
+                </h1>
+                <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                  v1.60.1_70399 · TOC 106001
+                </span>
+                <span className="hidden md:inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  dynamic-forever-us
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Sistema Híbrido de Auditoría Anti-Manipulación (P10) y Arbitraje
+                Intradía · Arquitectura Realmless por Rulesets
+              </p>
+            </div>
+          </div>
+
+          {/* Controles Globales: Selector de House ID y Sincronización Blizzard */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-lg px-3 py-1.5">
+              <Layers className="w-4 h-4 text-sky-400" />
+              <span className="text-xs text-slate-400">Mercado (House):</span>
+              <select
+                value={houseId}
+                onChange={(e) => setHouseId(Number(e.target.value))}
+                className="bg-transparent text-xs sm:text-sm font-semibold text-white focus:outline-none cursor-pointer"
+              >
+                <option value={110} className="bg-slate-900 text-white">
+                  #110 — Alianza Principal (US Rulesets 1/2/3/15)
+                </option>
+                <option value={113} className="bg-slate-900 text-white">
+                  #113 — Casa de Subastas #113 (US Mega-House)
+                </option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleSyncBlizzardNow}
+              disabled={syncingBlizzard}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white transition shadow-sm shadow-sky-500/20"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${syncingBlizzard ? "animate-spin" : ""}`}
+              />
+              {syncingBlizzard
+                ? "Consultando Blizzard..."
+                : "Sincronizar API Blizzard"}
+            </button>
+
+            <a
+              href={`/api/addon/export?houseId=${houseId}`}
+              download="ForeverMarketData.lua"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition"
+            >
+              <Download className="w-3.5 h-3.5" />
+               ForeverMarketData.lua
+            </a>
+          </div>
+        </div>
+
+        {/* Notificación de sincronización */}
+        {syncMessage && (
+          <div className="bg-sky-950/80 border-t border-sky-800/50 px-6 py-2 text-xs text-sky-200 flex items-center justify-between max-w-[1600px] mx-auto">
+            <span>{syncMessage}</span>
+            <button
+              onClick={() => setSyncMessage(null)}
+              className="text-sky-400 hover:text-white ml-4"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* NAVEGACIÓN DE LAS 4 VISTAS PRINCIPALES */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center gap-1 overflow-x-auto border-t border-slate-800/60 pt-1">
+          <button
+            onClick={() => setActiveTab("radar")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap ${
+              activeTab === "radar"
+                ? "border-sky-400 text-sky-300 bg-sky-500/10 rounded-t-lg"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            1. Radar de Arbitraje Intradía
+          </button>
+
+          <button
+            onClick={() => setActiveTab("detail")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap ${
+              activeTab === "detail"
+                ? "border-emerald-400 text-emerald-300 bg-emerald-500/10 rounded-t-lg"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            2. Curva Horaria 24h & Heatmap Semanal
+          </button>
+
+          <button
+            onClick={() => setActiveTab("professions")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap ${
+              activeTab === "professions"
+                ? "border-amber-400 text-amber-300 bg-amber-500/10 rounded-t-lg"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Hammer className="w-4 h-4" />
+            3. Laboratorio de Profesiones (Forever)
+          </button>
+
+          <button
+            onClick={() => setActiveTab("clan")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap ${
+              activeTab === "clan"
+                ? "border-purple-400 text-purple-300 bg-purple-500/10 rounded-t-lg"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            4. Zona del Clan & Addon In-Game
+          </button>
+        </div>
+      </header>
+
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-5 space-y-5">
+        {/* TARJETAS KPI DE ESTADO DEL MERCADO */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="rounded-xl border border-slate-800/90 bg-[#0b1120] p-4">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span>Ítems Únicos Auditados (House #{houseId})</span>
+              <Sparkles className="w-4 h-4 text-sky-400" />
+            </div>
+            <div className="mt-1.5 text-2xl font-bold text-white">
+              {overview
+                ? overview.total_items_tracked.toLocaleString()
+                : "..."}
+            </div>
+            <div className="mt-1 text-[11px] text-slate-400">
+              Clave primaria deduplicada:{" "}
+              <code className="text-sky-300">house_id={houseId} + us</code>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-800/90 bg-[#0b1120] p-4">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span>Volumen Total Activo (Unidades)</span>
+              <Layers className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="mt-1.5 text-2xl font-bold text-emerald-300">
+              {overview
+                ? overview.total_market_volume.toLocaleString()
+                : "..."}
+            </div>
+            <div className="mt-1 text-[11px] text-slate-400">
+              Suma de <code className="text-emerald-300">/auctions/{houseId}</code>{" "}
+              + <code className="text-emerald-300">/commodities</code>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-800/90 bg-[#0b1120] p-4">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span>Series Temporales (market_snapshots)</span>
+              <Clock className="w-4 h-4 text-amber-400" />
+            </div>
+            <div className="mt-1.5 text-2xl font-bold text-amber-300">
+              {overview ? overview.total_snapshots.toLocaleString() : "..."}
+            </div>
+            <div className="mt-1 text-[11px] text-slate-400">
+              Último corte Blizzard:{" "}
+              <span className="text-slate-200">
+                {overview?.last_blizzard_sync
+                  ? new Date(overview.last_blizzard_sync).toLocaleTimeString(
+                      [],
+                      { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }
+                    ) + " UTC"
+                  : "Sincronizando..."}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-800/90 bg-[#0b1120] p-4">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span>Filtro Anti-Manipulación Activo</span>
+              <ShieldAlert className="w-4 h-4 text-rose-400" />
+            </div>
+            <div className="mt-1.5 text-lg font-bold text-white flex items-center gap-2">
+              Percentil 10 Ponderado (P10)
+            </div>
+            <div className="mt-1 text-[11px] text-slate-400">
+              Descarta automáticamente subastas trampa de 1c y descuenta 5% AH cut
+            </div>
+          </div>
+        </section>
+
+        {/* =====================================================================
+            VISTA 1: RADAR DE ARBITRAJE INTRADÍA (VISTA PRINCIPAL)
+        ===================================================================== */}
+        {activeTab === "radar" && (
+          <section className="space-y-4">
+            {/* Barra de Filtros del Radar */}
+            <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-3 flex-1">
+                {/* Buscador */}
+                <div className="relative min-w-[240px] flex-1 max-w-sm">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar mena, hierba, C-GUR, EZ-Thro o item_id..."
+                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900 border border-slate-700/80 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                {/* Categoría */}
+                <div className="flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2">
+                  <Filter className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-xs text-slate-400">Categoría:</span>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-transparent text-xs sm:text-sm font-medium text-white focus:outline-none"
+                  >
+                    {(
+                      overview?.categories || [
+                        "Todas",
+                        "Minería",
+                        "Ingeniería",
+                        "Herboristería",
+                        "Consumibles",
+                        "Cajones Forever",
+                        "Sastrería y Peletería",
+                      ]
+                    ).map((cat) => (
+                      <option
+                        key={cat}
+                        value={cat}
+                        className="bg-slate-900 text-white"
+                      >
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filtro de Liquidez (Ocultar total_quantity < 50) */}
+                <div className="flex items-center gap-2.5 bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2">
+                  <span className="text-xs text-slate-300 font-medium">
+                    Filtro de Liquidez:
+                  </span>
+                  <select
+                    value={minLiquidity}
+                    onChange={(e) => setMinLiquidity(Number(e.target.value))}
+                    className="bg-slate-800 text-xs font-semibold text-emerald-300 rounded px-2 py-0.5 focus:outline-none border border-emerald-500/30"
+                  >
+                    <option value={50}>
+                      ≥ 50 uds (Ocultar ilíquidos - Recomendado)
+                    </option>
+                    <option value={200}>≥ 200 uds (Alta liquidez)</option>
+                    <option value={1000}>≥ 1,000 uds (Commodities masivas)</option>
+                    <option value={1}>≥ 1 ud (Mostrar todo)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="text-xs text-slate-400">
+                Mostrando{" "}
+                <span className="text-white font-semibold">{radar.length}</span>{" "}
+                oportunidades reales · Haz clic en cualquier fila para ver su{" "}
+                <span className="text-emerald-400 font-medium">
+                  Curva 24h y Heatmap
+                </span>
+              </div>
+            </div>
+
+            {/* Tabla del Radar Intradía */}
+            <div className="rounded-xl border border-slate-800 bg-[#0b1120] overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400">
+                      <th className="py-3.5 px-4">Objeto (WoW: Forever)</th>
+                      <th className="py-3.5 px-3">Hora Ideal Compra (Valle)</th>
+                      <th className="py-3.5 px-3">Precio P10 Valle</th>
+                      <th className="py-3.5 px-3">Hora Ideal Venta (Pico)</th>
+                      <th className="py-3.5 px-3">Precio P10 Pico</th>
+                      <th className="py-3.5 px-3 text-right">
+                        Volumen Diario / Stock
+                      </th>
+                      <th className="py-3.5 px-3 text-right">
+                        Ganancia Neta / Ud
+                      </th>
+                      <th className="py-3.5 px-4 text-right">
+                        ROI Neto (tras 5% AH cut)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                    {loadingDashboard ? (
+                      <tr>
+                        <td
+                          colSpan={8}
+                          className="py-12 text-center text-slate-400"
+                        >
+                          Calculando oportunidades de arbitraje intradía...
+                        </td>
+                      </tr>
+                    ) : radar.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={8}
+                          className="py-12 text-center text-slate-400"
+                        >
+                          No se encontraron objetos con los filtros actuales.
+                        </td>
+                      </tr>
+                    ) : (
+                      radar.map((item) => (
+                        <tr
+                          key={item.item_id}
+                          onClick={() => handleOpenItemDetail(item.item_id)}
+                          className="hover:bg-slate-800/50 transition cursor-pointer group"
+                        >
+                          {/* Objeto */}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={item.icon_url}
+                                alt={item.name_es}
+                                className="w-9 h-9 rounded-lg border border-slate-700 group-hover:border-sky-400 transition object-cover bg-slate-950"
+                              />
+                              <div>
+                                <div className="font-semibold text-white group-hover:text-sky-300 transition flex items-center gap-2">
+                                  <span>{item.name_es}</span>
+                                  {item.item_id > 240000 && (
+                                    <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                      FOREVER
+                                    </span>
+                                  )}
+                                  {item.has_bait_warning && (
+                                    <span
+                                      title={`Bait detectado: mínimo en ${formatCopperText(
+                                        item.current_min_price
+                                      )} (-${
+                                        item.bait_discount_pct
+                                      }% bajo el P10 real)`}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                                    >
+                                      <AlertTriangle className="w-3 h-3" />
+                                      Bait 1c Filtrado
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                  <span>ID #{item.item_id}</span>
+                                  <span>·</span>
+                                  <span className="text-slate-300">
+                                    {item.category}
+                                  </span>
+                                  <span>·</span>
+                                  <span>
+                                    P10 Actual:{" "}
+                                    <WowMoney
+                                      copper={item.current_p10_price}
+                                      compact
+                                    />
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Hora Ideal Compra (Valle) */}
+                          <td className="py-3 px-3">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono text-xs font-semibold">
+                              <ArrowDownRight className="w-3.5 h-3.5" />
+                              {String(item.valley_hour).padStart(2, "0")}:00 UTC
+                            </span>
+                          </td>
+
+                          {/* Precio P10 Valle */}
+                          <td className="py-3 px-3">
+                            <WowMoney copper={item.valley_p10} />
+                          </td>
+
+                          {/* Hora Ideal Venta (Pico) */}
+                          <td className="py-3 px-3">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-xs font-semibold">
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                              {String(item.peak_hour).padStart(2, "0")}:00 UTC
+                            </span>
+                          </td>
+
+                          {/* Precio P10 Pico */}
+                          <td className="py-3 px-3">
+                            <WowMoney copper={item.peak_p10} />
+                          </td>
+
+                          {/* Volumen Diario */}
+                          <td className="py-3 px-3 text-right font-mono">
+                            <div className="text-slate-100 font-semibold">
+                              {item.total_quantity.toLocaleString()} uds
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {item.num_listings} lotes
+                            </div>
+                          </td>
+
+                          {/* Ganancia Neta / Ud */}
+                          <td className="py-3 px-3 text-right">
+                            <WowMoney
+                              copper={item.net_profit_copper}
+                              showSign
+                            />
+                          </td>
+
+                          {/* ROI Neto (tras 5% AH cut) */}
+                          <td className="py-3 px-4 text-right">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-mono text-xs font-bold ${
+                                item.net_roi_pct >= 25
+                                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                  : item.net_roi_pct > 0
+                                  ? "bg-sky-500/15 text-sky-300 border border-sky-500/30"
+                                  : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                              }`}
+                            >
+                              {item.net_roi_pct > 0 ? "+" : ""}
+                              {item.net_roi_pct.toFixed(1)}%
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* =====================================================================
+            VISTA 2: CURVA HORARIA 24H Y HEATMAP SEMANAL (DETALLE DE ÍTEM)
+        ===================================================================== */}
+        {activeTab === "detail" && (
+          <section className="space-y-5">
+            {/* Barra de selección rápida de ítem */}
+            <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {itemDetail?.item && (
+                  <img
+                    src={itemDetail.item.icon_url}
+                    alt={itemDetail.item.name_es}
+                    className="w-12 h-12 rounded-xl border border-sky-500/40"
+                  />
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-white">
+                      {itemDetail?.item.name_es || "Cargando objeto..."}
+                    </h2>
+                    <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                      ID #{selectedItemId}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                      {itemDetail?.item.category}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Análisis de profundidad horaria (P10 ponderado por volumen) y
+                    ciclo semanal de bandas en House #{houseId}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Cambiar objeto:</span>
+                <select
+                  value={selectedItemId}
+                  onChange={(e) => setSelectedItemId(Number(e.target.value))}
+                  className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white font-medium focus:outline-none focus:border-sky-500"
+                >
+                  {radar.map((r) => (
+                    <option
+                      key={r.item_id}
+                      value={r.item_id}
+                      className="bg-slate-900 text-white"
+                    >
+                      {r.name_es} (#{r.item_id}) — ROI +{r.net_roi_pct.toFixed(1)}%
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {loadingDetail || !itemDetail ? (
+              <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-12 text-center text-slate-400">
+                Cargando curva horaria 24h y mapa de calor 7x24...
+              </div>
+            ) : (
+              <>
+                {/* Tarjetas de Resumen del Ítem */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-3.5">
+                    <div className="text-[11px] text-slate-400">
+                      Suelo Real Actual (P10)
+                    </div>
+                    <div className="mt-1 text-base font-bold">
+                      <WowMoney copper={itemDetail.item.current_p10} />
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-500">
+                      Mínimo crudo:{" "}
+                      {formatCopperText(itemDetail.item.current_min)}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3.5">
+                    <div className="text-[11px] text-emerald-300 font-medium">
+                      Hora Valle Compra ({String(itemDetail.item.valley_hour).padStart(2, "0")}:00 UTC)
+                    </div>
+                    <div className="mt-1 text-base font-bold">
+                      <WowMoney copper={itemDetail.item.valley_p10} />
+                    </div>
+                    <div className="mt-1 text-[11px] text-emerald-400/80">
+                      Acumular stock en madrugada
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-950/15 p-3.5">
+                    <div className="text-[11px] text-amber-300 font-medium">
+                      Hora Pico Venta ({String(itemDetail.item.peak_hour).padStart(2, "0")}:00 UTC)
+                    </div>
+                    <div className="mt-1 text-base font-bold">
+                      <WowMoney copper={itemDetail.item.peak_p10} />
+                    </div>
+                    <div className="mt-1 text-[11px] text-amber-400/80">
+                      Demanda máxima pre-raid
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-3.5">
+                    <div className="text-[11px] text-slate-400">
+                      Ganancia Neta / Ud (tras 5% AH)
+                    </div>
+                    <div className="mt-1 text-base font-bold">
+                      <WowMoney
+                        copper={itemDetail.item.net_profit_copper}
+                        showSign
+                      />
+                    </div>
+                    <div className="mt-1 text-[11px] text-emerald-400 font-semibold">
+                      ROI Neto: +{itemDetail.item.net_roi_pct.toFixed(1)}%
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-3.5">
+                    <div className="text-[11px] text-slate-400">
+                      Liquidez Actual Disponible
+                    </div>
+                    <div className="mt-1 text-lg font-bold text-white font-mono">
+                      {itemDetail.item.current_quantity.toLocaleString()} uds
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-400">
+                      en {itemDetail.item.num_listings} lotes activos
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gráfico TradingView Lightweight Charts */}
+                <IntradayChart
+                  data={itemDetail.timeseries}
+                  itemName={itemDetail.item.name_es}
+                />
+
+                {/* Perfil Horario 24h + Heatmap Semanal 7 Días x 24 Horas */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                  {/* Perfil Horario 24h */}
+                  <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4">
+                    <h3 className="text-sm font-bold text-white mb-1">
+                      Curva Horaria Promedio 24h (UTC)
+                    </h3>
+                    <p className="text-xs text-slate-400 mb-3">
+                      Comparativa de precio suelo <code className="text-emerald-300">p10_price</code> por hora del día (00h a 23h)
+                    </p>
+                    <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+                      {itemDetail.hourlyCurve24h.map((h) => {
+                        const pctWidth =
+                          maxHeatP10 > 0
+                            ? Math.max(
+                                15,
+                                Math.round((h.avg_p10 / maxHeatP10) * 100)
+                              )
+                            : 50;
+                        const isValley =
+                          h.hour_of_day === itemDetail.item.valley_hour;
+                        const isPeak =
+                          h.hour_of_day === itemDetail.item.peak_hour;
+
+                        return (
+                          <div
+                            key={h.hour_of_day}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <span className="w-12 font-mono text-slate-400">
+                              {String(h.hour_of_day).padStart(2, "0")}:00
+                            </span>
+                            <div className="flex-1 h-5 bg-slate-900 rounded overflow-hidden relative flex items-center">
+                              <div
+                                style={{ width: `${pctWidth}%` }}
+                                className={`h-full transition-all ${
+                                  isValley
+                                    ? "bg-emerald-500/60"
+                                    : isPeak
+                                    ? "bg-amber-500/65"
+                                    : "bg-sky-500/30"
+                                }`}
+                              />
+                              <span className="absolute left-2 text-[11px] font-mono text-white">
+                                {formatCopperText(h.avg_p10)}
+                              </span>
+                            </div>
+                            <span className="w-16 text-right font-mono text-[11px] text-slate-400">
+                              {h.avg_quantity.toLocaleString()}u
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Mapa de Calor 7 Días x 24 Horas */}
+                  <div className="xl:col-span-2 rounded-xl border border-slate-800 bg-[#0b1120] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <div>
+                        <h3 className="text-sm font-bold text-white">
+                          Mapa de Calor Semanal (7 Días × 24 Horas UTC)
+                        </h3>
+                        <p className="text-xs text-slate-400">
+                          Verde = Horas Valle (Acumular Stock barato) · Ámbar/Rojo
+                          = Horas Pico de Raid (Vender con máximo margen)
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-200 border border-emerald-500/50">
+                          Compra Valle
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                          Neutral
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-amber-500/25 text-amber-200 border border-amber-500/40">
+                          Demanda Alta
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-rose-500/35 text-rose-100 border border-rose-500/60">
+                          Pico Raid
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-separate border-spacing-1 text-center">
+                        <thead>
+                          <tr>
+                            <th className="text-left text-[11px] text-slate-400 font-medium px-2 py-1">
+                              Día \ Hora
+                            </th>
+                            {Array.from({ length: 24 }, (_, hr) => (
+                              <th
+                                key={hr}
+                                className="text-[10px] font-mono text-slate-400 px-1 py-1"
+                              >
+                                {String(hr).padStart(2, "0")}h
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {DAY_LABELS.map((dayLabel, dow) => (
+                            <tr key={dow}>
+                              <td className="text-left text-xs font-medium text-slate-300 px-2 py-1.5 whitespace-nowrap">
+                                {dayLabel}
+                              </td>
+                              {Array.from({ length: 24 }, (_, hr) => {
+                                const cell = itemDetail.heatmap7x24.find(
+                                  (c) =>
+                                    c.day_of_week === dow &&
+                                    c.hour_of_day === hr
+                                );
+                                const val = cell?.avg_p10 || 0;
+                                return (
+                                  <td
+                                    key={hr}
+                                    title={`${dayLabel} ${String(hr).padStart(
+                                      2,
+                                      "0"
+                                    )}:00 UTC — P10: ${formatCopperText(
+                                      val
+                                    )} (Vol: ${
+                                      cell?.avg_quantity?.toLocaleString() || 0
+                                    } uds)`}
+                                    className={`text-[10px] font-mono rounded border px-1 py-2 transition hover:scale-105 cursor-default ${getHeatmapCellColor(
+                                      val
+                                    )}`}
+                                  >
+                                    {val > 0 ? formatCopperText(val) : "-"}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {/* =====================================================================
+            VISTA 3: LABORATORIO DE PROFESIONES (MINERÍA & INGENIERÍA EN FOREVER)
+        ===================================================================== */}
+        {activeTab === "professions" && (
+          <section className="space-y-4">
+            <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <Hammer className="w-5 h-5 text-amber-400" />
+                  Laboratorio de Profesiones (Minería & Ingeniería en WoW: Forever)
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Cruza <code className="text-amber-300">recipes_catalog</code>{" "}
+                  contra el último <code className="text-sky-300">market_snapshots</code>{" "}
+                  comprando materiales al suelo real <code className="text-emerald-300">p10_price</code> y descontando el 5% de comisión AH
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex rounded-lg bg-slate-900 p-1 border border-slate-800 text-xs font-semibold">
+                  {(["Todas", "Ingeniería", "Minería"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setProfFilter(tab)}
+                      className={`px-3 py-1.5 rounded-md transition ${
+                        profFilter === tab
+                          ? "bg-amber-500 text-slate-950"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                <label className="inline-flex items-center gap-2 text-xs text-purple-300 bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={onlyForeverRecipes}
+                    onChange={(e) => setOnlyForeverRecipes(e.target.checked)}
+                    className="rounded accent-purple-500"
+                  />
+                  <span>Solo Recetas Nuevas de Forever (C-GUR / EZ-Thro / Bots)</span>
+                </label>
+
+                <label className="inline-flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={onlyProfitableRecipes}
+                    onChange={(e) =>
+                      setOnlyProfitableRecipes(e.target.checked)
+                    }
+                    className="rounded accent-emerald-500"
+                  />
+                  <span>Solo Ganancia Positiva Hoy</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredProfessions.map((rec) => (
+                <div
+                  key={rec.recipe_id}
+                  className={`rounded-xl border p-4 flex flex-col justify-between transition ${
+                    rec.is_profitable
+                      ? "border-emerald-500/30 bg-gradient-to-b from-[#0b1324] to-[#09101d]"
+                      : "border-slate-800 bg-[#0b1120]"
+                  }`}
+                >
+                  <div>
+                    {/* Cabecera de la Receta */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={rec.output_icon_url}
+                          alt={rec.output_name_es}
+                          className="w-11 h-11 rounded-lg border border-slate-700"
+                        />
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="font-bold text-sm text-white">
+                              {rec.name_es}
+                            </h3>
+                            {rec.is_forever_exclusive && (
+                              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                NUEVO EN FOREVER
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            {rec.profession} · Produce{" "}
+                            <span className="text-white font-semibold">
+                              {rec.output_quantity}x
+                            </span>{" "}
+                            ({rec.output_market_volume.toLocaleString()} uds en AH)
+                          </div>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`px-2.5 py-1 rounded-full font-mono text-xs font-bold whitespace-nowrap ${
+                          rec.is_profitable
+                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                            : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                        }`}
+                      >
+                        {rec.net_roi_pct > 0 ? "+" : ""}
+                        {rec.net_roi_pct.toFixed(1)}% ROI
+                      </span>
+                    </div>
+
+                    {/* Lista de Materiales (Reagents) */}
+                    <div className="mt-3.5 pt-3 border-t border-slate-800/80 space-y-2">
+                      <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                        Materiales Requeridos (a precio P10):
+                      </div>
+                      {rec.reagents.map((rg) => (
+                        <div
+                          key={rg.item_id}
+                          onClick={() => handleOpenItemDetail(rg.item_id)}
+                          className="flex items-center justify-between text-xs bg-slate-900/70 hover:bg-slate-800/80 px-2.5 py-1.5 rounded-lg cursor-pointer transition"
+                        >
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={rg.icon_url}
+                              alt={rg.name_es}
+                              className="w-5 h-5 rounded"
+                            />
+                            <span className="text-slate-200 font-medium">
+                              {rg.count}x {rg.name_es}
+                            </span>
+                          </div>
+                          <WowMoney copper={rg.subtotal_p10} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resumen Financiero de la Receta */}
+                  <div className="mt-4 pt-3 border-t border-slate-800/90 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>Costo Materiales (P10):</span>
+                      <WowMoney copper={rec.total_craft_cost} />
+                    </div>
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>
+                        Venta Neta ({rec.output_quantity}x tras 5% AH):
+                      </span>
+                      <WowMoney copper={rec.net_sale_after_ah_cut} />
+                    </div>
+                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 font-semibold">
+                      <span className="text-slate-200">
+                        Ganancia Neta por Crafteo:
+                      </span>
+                      <WowMoney
+                        copper={rec.net_profit_copper}
+                        showSign
+                        className="text-sm font-bold"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* =====================================================================
+            VISTA 4: ZONA DEL CLAN (DRAG & DROP UPLOADER + LEADERBOARD + ADDON)
+        ===================================================================== */}
+        {activeTab === "clan" && (
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Columna Izquierda y Central: Uploader Drag & Drop + Exportación de ForeverMarketData.lua */}
+            <div className="lg:col-span-2 space-y-5">
+              {/* Tarjeta 1: Subida Colaborativa de ForeverMarketAudit.lua */}
+              <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                      <UploadCloud className="w-5 h-5 text-sky-400" />
+                      Ingesta Colaborativa del Clan (Subida de SavedVariables entre horas)
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Sube tu archivo{" "}
+                      <code className="text-sky-300">
+                        _forever_/WTF/Account/&lt;CUENTA&gt;/SavedVariables/ForeverMarketAudit.lua
+                      </code>{" "}
+                      para capturar fluctuaciones cada 15 minutos cuando el API
+                      oficial de Blizzard aún no ha rotado su corte horario.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2">
+                    <span className="text-xs text-slate-400">
+                      Jugador del Clan:
+                    </span>
+                    <input
+                      type="text"
+                      value={clanPlayerName}
+                      onChange={(e) => setClanPlayerName(e.target.value)}
+                      placeholder="Nombre de tu PJ (ej. Odin)"
+                      className="bg-transparent text-xs sm:text-sm font-semibold text-white focus:outline-none w-36"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      handleUploadSavedVariablesContent(SAMPLE_CLAN_LUA)
+                    }
+                    disabled={uploadingLua}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-purple-600/25 hover:bg-purple-600/40 text-purple-200 border border-purple-500/40 transition"
+                  >
+                    <Flame className="w-3.5 h-3.5 text-purple-300" />
+                    Simular Subida Inmediata de ForeverMarketAudit.lua
+                  </button>
+                </div>
+
+                {/* Zona Drag & Drop */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragActive(true);
+                  }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={handleFileDrop}
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition ${
+                    dragActive
+                      ? "border-sky-400 bg-sky-500/10"
+                      : "border-slate-700 hover:border-slate-500 bg-slate-900/40"
+                  }`}
+                >
+                  <UploadCloud className="w-10 h-10 text-sky-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-white">
+                    Arrastra y suelta aquí tu{" "}
+                    <span className="text-sky-300">ForeverMarketAudit.lua</span>
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    El motor aplicará automáticamente el algoritmo P10
+                    anti-manipulación y redondeará el bloque a 15 minutos UTC
+                  </p>
+                  <label className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white cursor-pointer transition">
+                    <span>Seleccionar archivo ForeverMarketAudit.lua</span>
+                    <input
+                      type="file"
+                      accept=".lua"
+                      onChange={handleFileInputChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {uploadStatus && (
+                  <div
+                    className={`rounded-lg p-3.5 text-xs flex items-center gap-2 border ${
+                      uploadStatus.ok
+                        ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-200"
+                        : "bg-rose-950/60 border-rose-500/40 text-rose-200"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{uploadStatus.message}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Tarjeta 2: Descarga de ForeverMarketData.lua e Instrucciones del Addon */}
+              <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <Download className="w-5 h-5 text-amber-400" />
+                      Generador de Base de Datos para el Addon (
+                      <code>ForeverMarketData.lua</code>)
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Descarga la tabla Lua actualizada con las medias horarias
+                      (Valle, Pico, P10, Mediana y Alertas de Bait) para ver toda la
+                      inteligencia directamente en los tooltips dentro de{" "}
+                      <strong>WoW: Forever</strong>.
+                    </p>
+                  </div>
+
+                  <a
+                    href={`/api/addon/export?houseId=${houseId}`}
+                    download="ForeverMarketData.lua"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition"
+                  >
+                    <Download className="w-4 h-4" />
+                    Descargar Base de Datos para el Addon
+                  </a>
+                </div>
+
+                <div className="rounded-lg bg-slate-950 border border-slate-800 p-4 text-xs space-y-2">
+                  <div className="font-semibold text-sky-300">
+                    Ubicación del Addon en tu cliente de WoW: Forever (
+                    <code>1.60.1_70399</code>):
+                  </div>
+                  <code className="block text-slate-300 bg-slate-900 px-3 py-2 rounded border border-slate-800 font-mono">
+                    World of Warcraft/_forever_/Interface/AddOns/ForeverMarketAudit/
+                  </code>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-slate-400">
+                    <div className="bg-slate-900/70 p-2.5 rounded border border-slate-800">
+                      <strong className="text-white block">
+                        1. ForeverMarketAudit.toc
+                      </strong>
+                      Interface: <code>106001</code> · Define{" "}
+                      <code>SavedVariables: ForeverMarketAuditDB</code>
+                    </div>
+                    <div className="bg-slate-900/70 p-2.5 rounded border border-slate-800">
+                      <strong className="text-white block">
+                        2. ForeverMarketData.lua
+                      </strong>
+                      Datos horarios generados por esta web para tus Tooltips
+                    </div>
+                    <div className="bg-slate-900/70 p-2.5 rounded border border-slate-800">
+                      <strong className="text-white block">
+                        3. ForeverMarketAudit.lua
+                      </strong>
+                      Escáner legal <code>C_AuctionHouse</code> y hook de Tooltips
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Columna Derecha: Leaderboard del Clan */}
+            <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <Award className="w-5 h-5 text-amber-400" />
+                      Leaderboard del Clan
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Ranking de auditores que aportan escaneos intermedios de{" "}
+                      <code>C_AuctionHouse</code>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 mt-4">
+                  {leaderboard.map((entry, idx) => (
+                    <div
+                      key={entry.uploaded_by}
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-800"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
+                            idx === 0
+                              ? "bg-amber-500 text-slate-950"
+                              : idx === 1
+                              ? "bg-slate-300 text-slate-950"
+                              : idx === 2
+                              ? "bg-amber-700 text-white"
+                              : "bg-slate-800 text-slate-400"
+                          }`}
+                        >
+                          #{idx + 1}
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-white">
+                            {entry.uploaded_by}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            {entry.snapshots_count} cortes ·{" "}
+                            {entry.items_audited.toLocaleString()} ítems auditados
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-mono font-bold text-amber-300">
+                          {entry.points.toLocaleString()} pts
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {new Date(entry.last_upload_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "UTC",
+                          })}{" "}
+                          UTC
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
+                <div className="font-semibold text-slate-300">
+                  Sincronización por CLI (Linux / Windows):
+                </div>
+                <code className="block bg-slate-950 p-2 rounded border border-slate-800 text-sky-300 font-mono">
+                  npm run sync-addon -- /ruta/a/ForeverMarketAudit.lua
+                </code>
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}

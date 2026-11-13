@@ -1,0 +1,1810 @@
+[
+  {
+    "item_id": 2770,
+    "name_es": "Mena de cobre",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134566.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 2840,
+    "name_es": "Barra de cobre",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133216.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 2771,
+    "name_es": "Mena de estaño",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134579.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 3576,
+    "name_es": "Barra de estaño",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133219.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 35
+  },
+  {
+    "item_id": 2841,
+    "name_es": "Barra de bronce",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133227.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 50
+  },
+  {
+    "item_id": 2775,
+    "name_es": "Mena de plata",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135242.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 75
+  },
+  {
+    "item_id": 2842,
+    "name_es": "Barra de plata",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133215.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 2772,
+    "name_es": "Mena de hierro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134572.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 150
+  },
+  {
+    "item_id": 3575,
+    "name_es": "Barra de hierro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133232.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 200
+  },
+  {
+    "item_id": 3859,
+    "name_es": "Barra de acero",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133234.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 60
+  },
+  {
+    "item_id": 2776,
+    "name_es": "Mena de oro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134571.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 500
+  },
+  {
+    "item_id": 3577,
+    "name_es": "Barra de oro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133217.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 600
+  },
+  {
+    "item_id": 3858,
+    "name_es": "Mena de mitril",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134576.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 3860,
+    "name_es": "Barra de mitril",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133220.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 400
+  },
+  {
+    "item_id": 7911,
+    "name_es": "Mena de veraplata",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134580.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 500
+  },
+  {
+    "item_id": 6037,
+    "name_es": "Barra de veraplata",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133222.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1250
+  },
+  {
+    "item_id": 10620,
+    "name_es": "Mena de torio",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134578.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 12359,
+    "name_es": "Barra de torio",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133221.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 600
+  },
+  {
+    "item_id": 12360,
+    "name_es": "Barra de arcanita",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134459.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 5000
+  },
+  {
+    "item_id": 12361,
+    "name_es": "Zafiro azul",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134132.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 7000
+  },
+  {
+    "item_id": 12800,
+    "name_es": "Diamante de Azeroth",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134094.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10000
+  },
+  {
+    "item_id": 2835,
+    "name_es": "Piedra férrea",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135232.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 2
+  },
+  {
+    "item_id": 2836,
+    "name_es": "Piedra burda",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135235.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 15
+  },
+  {
+    "item_id": 2838,
+    "name_es": "Piedra pesada",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135238.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 60
+  },
+  {
+    "item_id": 7912,
+    "name_es": "Piedra sólida",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135236.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 12365,
+    "name_es": "Piedra densa",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134461.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 248815,
+    "name_es": "Mena de torio pesada",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/3608331.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 375
+  },
+  {
+    "item_id": 251291,
+    "name_es": "Barra de torio pesada",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/348540.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1500
+  },
+  {
+    "item_id": 249726,
+    "name_es": "Barra de azerotio",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/612100.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 3000
+  },
+  {
+    "item_id": 251290,
+    "name_es": "Barra de legionita",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/1416159.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 5000
+  },
+  {
+    "item_id": 4359,
+    "name_es": "Puñado de tornillos de cobre",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134068.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 12
+  },
+  {
+    "item_id": 4361,
+    "name_es": "Tubo de cobre",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133025.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 120
+  },
+  {
+    "item_id": 4363,
+    "name_es": "Modulador de cobre",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132997.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 50
+  },
+  {
+    "item_id": 4364,
+    "name_es": "Pólvora burda",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133849.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 12
+  },
+  {
+    "item_id": 4371,
+    "name_es": "Tubo de bronce",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133024.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 200
+  },
+  {
+    "item_id": 4375,
+    "name_es": "Cacharros zumbones de bronce",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132996.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 115
+  },
+  {
+    "item_id": 4377,
+    "name_es": "Pólvora potente",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133853.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 150
+  },
+  {
+    "item_id": 4382,
+    "name_es": "Marco de bronce",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133006.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 600
+  },
+  {
+    "item_id": 4387,
+    "name_es": "Tornapunta de hierro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135128.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 400
+  },
+  {
+    "item_id": 4389,
+    "name_es": "Girocronátomo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134377.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 750
+  },
+  {
+    "item_id": 4390,
+    "name_es": "Granada de hierro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133716.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 125
+  },
+  {
+    "item_id": 4394,
+    "name_es": "Bomba de hierro grande",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133709.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 750
+  },
+  {
+    "item_id": 4404,
+    "name_es": "Contacto de plata",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133218.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 4406,
+    "name_es": "Mira estándar",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134441.jpg",
+    "subclass": "Dispositivo",
+    "class": "Consumible",
+    "vendor_sell_price": 600
+  },
+  {
+    "item_id": 4407,
+    "name_es": "Mira de precisión",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134441.jpg",
+    "subclass": "Dispositivo",
+    "class": "Consumible",
+    "vendor_sell_price": 1200
+  },
+  {
+    "item_id": 10505,
+    "name_es": "Pólvora sólida",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134380.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 10546,
+    "name_es": "Mira mortal",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134441.jpg",
+    "subclass": "Dispositivo",
+    "class": "Consumible",
+    "vendor_sell_price": 1500
+  },
+  {
+    "item_id": 10558,
+    "name_es": "Núcleo de poder de oro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132489.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 10559,
+    "name_es": "Tubo de mitril",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134535.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 750
+  },
+  {
+    "item_id": 10560,
+    "name_es": "Activador inestable",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132488.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1000
+  },
+  {
+    "item_id": 10561,
+    "name_es": "Envoltura de mitril",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133021.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1000
+  },
+  {
+    "item_id": 15992,
+    "name_es": "Pólvora densa",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133587.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 15993,
+    "name_es": "Granada de torio",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133716.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 1500
+  },
+  {
+    "item_id": 15994,
+    "name_es": "Trasto de torio",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132998.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 2500
+  },
+  {
+    "item_id": 16000,
+    "name_es": "Tubo de torio",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133027.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 3750
+  },
+  {
+    "item_id": 16006,
+    "name_es": "Conversor de arcanita delicado",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133001.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10000
+  },
+  {
+    "item_id": 18283,
+    "name_es": "Acurascopio 247x128 de Biznicks",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134441.jpg",
+    "subclass": "Dispositivo",
+    "class": "Consumible",
+    "vendor_sell_price": 25000
+  },
+  {
+    "item_id": 260784,
+    "name_es": "Tiras C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134393.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 260792,
+    "name_es": "Dinamita C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133714.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 75
+  },
+  {
+    "item_id": 260793,
+    "name_es": "Bomba de cobre C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133717.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 60
+  },
+  {
+    "item_id": 260794,
+    "name_es": "Sobreveste para tontos",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134147.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 150
+  },
+  {
+    "item_id": 260795,
+    "name_es": "Bomba de cobre XL para tontos",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133709.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 175
+  },
+  {
+    "item_id": 260796,
+    "name_es": "Almohadilla C-GUR antirresbalones",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134260.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 200
+  },
+  {
+    "item_id": 260797,
+    "name_es": "Bomba de bronce C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133717.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 200
+  },
+  {
+    "item_id": 260798,
+    "name_es": "Dinamita enorme C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133714.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 350
+  },
+  {
+    "item_id": 260800,
+    "name_es": "Oveja C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/538563.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 1000
+  },
+  {
+    "item_id": 260801,
+    "name_es": "Mecha ignífuga para tontos",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133243.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 300
+  },
+  {
+    "item_id": 260803,
+    "name_es": "Granada para tontos",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133714.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 350
+  },
+  {
+    "item_id": 260804,
+    "name_es": "Estuche C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133022.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1000
+  },
+  {
+    "item_id": 260805,
+    "name_es": "Bomba C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133709.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 750
+  },
+  {
+    "item_id": 260809,
+    "name_es": "Bomba de fragmentación PercuDestructor",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133710.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 750
+  },
+  {
+    "item_id": 260811,
+    "name_es": "Navaja gnómica",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/237296.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1000
+  },
+  {
+    "item_id": 260812,
+    "name_es": "Despojador a distancia",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/986490.jpg",
+    "subclass": "Otros",
+    "class": "Miscelánea",
+    "vendor_sell_price": 2000
+  },
+  {
+    "item_id": 260813,
+    "name_es": "Tubo C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133016.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1500
+  },
+  {
+    "item_id": 260814,
+    "name_es": "Dinamita ingeniosa C-GUR",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133714.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 500
+  },
+  {
+    "item_id": 260815,
+    "name_es": "Cartucho para tontos",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134882.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 2000
+  },
+  {
+    "item_id": 260816,
+    "name_es": "Granada de torio para tontos",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133716.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 1500
+  },
+  {
+    "item_id": 255007,
+    "name_es": "Isorresorte de gólem",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/4548890.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 22
+  },
+  {
+    "item_id": 279949,
+    "name_es": "Robot de reparación",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/1336885.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 279950,
+    "name_es": "Robot de componentes",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133871.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 279982,
+    "name_es": "Horno de hierro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/629055.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 279985,
+    "name_es": "Recuperador arcano",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/986482.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 279988,
+    "name_es": "Yunque",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/1020356.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 2589,
+    "name_es": "Paño de lino",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132889.jpg",
+    "subclass": "Tela",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 13
+  },
+  {
+    "item_id": 2592,
+    "name_es": "Paño de lana",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132911.jpg",
+    "subclass": "Tela",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 33
+  },
+  {
+    "item_id": 4306,
+    "name_es": "Paño de seda",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132905.jpg",
+    "subclass": "Tela",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 150
+  },
+  {
+    "item_id": 4338,
+    "name_es": "Paño de tejido mágico",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132892.jpg",
+    "subclass": "Tela",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 14047,
+    "name_es": "Paño rúnico",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132903.jpg",
+    "subclass": "Tela",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 400
+  },
+  {
+    "item_id": 2318,
+    "name_es": "Cuero ligero",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134252.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 15
+  },
+  {
+    "item_id": 2319,
+    "name_es": "Cuero medio",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134254.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 50
+  },
+  {
+    "item_id": 4234,
+    "name_es": "Cuero pesado",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134256.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 150
+  },
+  {
+    "item_id": 4304,
+    "name_es": "Cuero grueso",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134257.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 300
+  },
+  {
+    "item_id": 8170,
+    "name_es": "Cuero basto",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134251.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 500
+  },
+  {
+    "item_id": 2447,
+    "name_es": "Flor de paz",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133939.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 765,
+    "name_es": "Hojaplata",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134190.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 2450,
+    "name_es": "Brezospina",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134412.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 2453,
+    "name_es": "Hierba cardenal",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134181.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 3820,
+    "name_es": "Alga estranguladora",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134191.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 3356,
+    "name_es": "Sangrerregia",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134183.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 30
+  },
+  {
+    "item_id": 3821,
+    "name_es": "Espina de oro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134196.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 150
+  },
+  {
+    "item_id": 8831,
+    "name_es": "Loto cárdeno",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134198.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 300
+  },
+  {
+    "item_id": 8838,
+    "name_es": "Solea",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134199.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 60
+  },
+  {
+    "item_id": 13463,
+    "name_es": "Hojasueño",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134204.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 13464,
+    "name_es": "Sansam dorado",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134221.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 13465,
+    "name_es": "Salviargenta de montaña",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134215.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 150
+  },
+  {
+    "item_id": 13466,
+    "name_es": "Flor de plaga",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134219.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 13467,
+    "name_es": "Setelo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134212.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 13468,
+    "name_es": "Loto negro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134202.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1000
+  },
+  {
+    "item_id": 248821,
+    "name_es": "Salvia demoníaca",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/458175.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 225
+  },
+  {
+    "item_id": 248822,
+    "name_es": "Loto de la muerte",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/5976935.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1500
+  },
+  {
+    "item_id": 248823,
+    "name_es": "Hojapesadilla",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/348547.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 150
+  },
+  {
+    "item_id": 248825,
+    "name_es": "Cuero vil",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134259.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 750
+  },
+  {
+    "item_id": 250342,
+    "name_es": "Elixir arcano inferior",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134729.jpg",
+    "subclass": "Elixires",
+    "class": "Consumible",
+    "vendor_sell_price": 50
+  },
+  {
+    "item_id": 250934,
+    "name_es": "Poción de hechicería explosiva",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/463921.jpg",
+    "subclass": "Pociones",
+    "class": "Consumible",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 250940,
+    "name_es": "Poción frenética",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/463922.jpg",
+    "subclass": "Pociones",
+    "class": "Consumible",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 248683,
+    "name_es": "Cajón arrebatado: Mena de aprendiz",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/236994.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 248687,
+    "name_es": "Cajón arrebatado: Mena de oficial",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/236994.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 248703,
+    "name_es": "Cajón arrebatado: Lingotes de aprendiz",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/236994.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 248704,
+    "name_es": "Cajón arrebatado: Piezas de aprendiz",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/236994.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 248706,
+    "name_es": "Cajón arrebatado: Lingotes de oficial",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/236994.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 248707,
+    "name_es": "Cajón arrebatado: Piezas de oficial",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/236994.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 8068,
+    "name_es": "Proyectil artesanal pesado",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132384.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 8067,
+    "name_es": "Proyectil artesanal ligero",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132384.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 3033,
+    "name_es": "Perdigón sólido",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132384.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 2519,
+    "name_es": "Perdigón pesado",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132384.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 8069,
+    "name_es": "Proyectil artesanal sólido",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132384.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 2515,
+    "name_es": "Flecha afilada",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132382.jpg",
+    "subclass": "Flecha",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 2516,
+    "name_es": "Perdigón ligero",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132384.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 11285,
+    "name_es": "Flecha dentada",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135661.jpg",
+    "subclass": "Flecha",
+    "class": "Proyectil",
+    "vendor_sell_price": 2
+  },
+  {
+    "item_id": 3030,
+    "name_es": "Flecha navaja",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132382.jpg",
+    "subclass": "Flecha",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 3465,
+    "name_es": "Proyectil explosivo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132384.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 9
+  },
+  {
+    "item_id": 3464,
+    "name_es": "Flecha de plumas",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132382.jpg",
+    "subclass": "Flecha",
+    "class": "Proyectil",
+    "vendor_sell_price": 8
+  },
+  {
+    "item_id": 10512,
+    "name_es": "Balas de mitril de gran impacto",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132383.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 2
+  },
+  {
+    "item_id": 2512,
+    "name_es": "Flecha férrea",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132382.jpg",
+    "subclass": "Flecha",
+    "class": "Proyectil",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 11284,
+    "name_es": "Balas de precisión",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132383.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 6362,
+    "name_es": "Bacalao piedrescama crudo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133890.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 10513,
+    "name_es": "Girotiro de mitril",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132383.jpg",
+    "subclass": "Bala",
+    "class": "Proyectil",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 3371,
+    "name_es": "Vial vacío",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134864.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 13422,
+    "name_es": "Anguila escama pétrea",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133897.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 2581,
+    "name_es": "Venda de lino gruesa",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133688.jpg",
+    "subclass": "Vendas",
+    "class": "Consumible",
+    "vendor_sell_price": 20
+  },
+  {
+    "item_id": 2678,
+    "name_es": "Especias suaves",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134059.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 1081,
+    "name_es": "Carne de araña crujiente",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134321.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 50
+  },
+  {
+    "item_id": 3358,
+    "name_es": "Mostacho de Khadgar",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134188.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 175
+  },
+  {
+    "item_id": 4603,
+    "name_es": "Serviola moteada cruda",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133887.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 6359,
+    "name_es": "Pargo de fuego",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134299.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 4358,
+    "name_es": "Dinamita férrea",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133714.jpg",
+    "subclass": "Explosivos",
+    "class": "Consumible",
+    "vendor_sell_price": 30
+  },
+  {
+    "item_id": 18042,
+    "name_es": "Espada con punta de torio",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132382.jpg",
+    "subclass": "Flecha",
+    "class": "Proyectil",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 3530,
+    "name_es": "Venda de lana",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133684.jpg",
+    "subclass": "Vendas",
+    "class": "Consumible",
+    "vendor_sell_price": 28
+  },
+  {
+    "item_id": 6358,
+    "name_es": "Bocanegra graso",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134302.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 4592,
+    "name_es": "Pargo de lodo boquilargo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133918.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 4594,
+    "name_es": "Bacalao piedrescama",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133890.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 6
+  },
+  {
+    "item_id": 13930,
+    "name_es": "Filete de branquirrojo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133892.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 5784,
+    "name_es": "Escama de múrloc babosa",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134304.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 75
+  },
+  {
+    "item_id": 3818,
+    "name_es": "Pálida",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134193.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 125
+  },
+  {
+    "item_id": 10940,
+    "name_es": "Polvo extraño",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132858.jpg",
+    "subclass": "Encantamiento",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 6450,
+    "name_es": "Venda de seda",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133671.jpg",
+    "subclass": "Vendas",
+    "class": "Consumible",
+    "vendor_sell_price": 200
+  },
+  {
+    "item_id": 2449,
+    "name_es": "Raíz de tierra",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134187.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 20
+  },
+  {
+    "item_id": 6887,
+    "name_es": "Serviola moteada",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133887.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 3369,
+    "name_es": "Musgo de tumba",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133849.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 6291,
+    "name_es": "Pececito luminoso crudo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133894.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 3712,
+    "name_es": "Carne de tortuga",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134026.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 87
+  },
+  {
+    "item_id": 8365,
+    "name_es": "Trucha cabeza de mitril cruda",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133888.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 18945,
+    "name_es": "Residuo de hierro negro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132857.jpg",
+    "subclass": "Misión",
+    "class": "Misión",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 5503,
+    "name_es": "Carne de almeja",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134007.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 16
+  },
+  {
+    "item_id": 3174,
+    "name_es": "Icor de araña",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134437.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 16
+  },
+  {
+    "item_id": 7974,
+    "name_es": "Carne de almeja sabrosa",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134007.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 50
+  },
+  {
+    "item_id": 6947,
+    "name_es": "Veneno instantáneo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132273.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 251524,
+    "name_es": "Descarrioaleta",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/237319.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 5634,
+    "name_es": "Poción de acción libre",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134715.jpg",
+    "subclass": "Pociones",
+    "class": "Consumible",
+    "vendor_sell_price": 75
+  },
+  {
+    "item_id": 814,
+    "name_es": "Frasco de aceite",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132794.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 769,
+    "name_es": "Trozo de carne de jabalí",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133970.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 3
+  },
+  {
+    "item_id": 2321,
+    "name_es": "Hilo refinado",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132912.jpg",
+    "subclass": "Tela",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 1015,
+    "name_es": "Costillar de lobo magro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133970.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 24
+  },
+  {
+    "item_id": 8153,
+    "name_es": "Atriplex salvaje",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134183.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 5997,
+    "name_es": "Elixir de defensa menor",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134843.jpg",
+    "subclass": "Elixires",
+    "class": "Consumible",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 6889,
+    "name_es": "Huevo pequeño",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132832.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 3470,
+    "name_es": "Piedra de pulir férrea",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135243.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 3172,
+    "name_es": "Intestinos de jabalí",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134342.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 18
+  },
+  {
+    "item_id": 11083,
+    "name_es": "Polvo de alma",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132857.jpg",
+    "subclass": "Encantamiento",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 21217,
+    "name_es": "Delicia de sabiola",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133907.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 125
+  },
+  {
+    "item_id": 13754,
+    "name_es": "Vigorpez lustroso crudo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134301.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 6
+  },
+  {
+    "item_id": 13759,
+    "name_es": "Pargo nocturno crudo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133909.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 15420,
+    "name_es": "Plumahierro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132918.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 5095,
+    "name_es": "Atún blanco arco iris",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133913.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 3
+  },
+  {
+    "item_id": 2799,
+    "name_es": "Colmillo de gorila",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134298.jpg",
+    "subclass": "Misión",
+    "class": "Misión",
+    "vendor_sell_price": 67
+  },
+  {
+    "item_id": 3478,
+    "name_es": "Piedra de pulir burda",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/135244.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 2692,
+    "name_es": "Especias picantes",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/1387643.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 2886,
+    "name_es": "Costilla de jabalí del risco",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133972.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 5504,
+    "name_es": "Carne de almeja ácida",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134007.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 22
+  },
+  {
+    "item_id": 2672,
+    "name_es": "Carne de lobo fibrosa",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133970.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 249428,
+    "name_es": "Pellejo prístino",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/3586020.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 13755,
+    "name_es": "Calamar de invierno crudo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133899.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 7
+  },
+  {
+    "item_id": 3531,
+    "name_es": "Venda de lana gruesa",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133687.jpg",
+    "subclass": "Vendas",
+    "class": "Consumible",
+    "vendor_sell_price": 57
+  },
+  {
+    "item_id": 6533,
+    "name_es": "Atraepeces acuadinámico",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133982.jpg",
+    "subclass": "Dispositivo",
+    "class": "Consumible",
+    "vendor_sell_price": 62
+  },
+  {
+    "item_id": 13760,
+    "name_es": "Salmón escama de sol crudo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133905.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 2304,
+    "name_es": "Refuerzo para armadura ligero",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133611.jpg",
+    "subclass": "Permanente",
+    "class": "Consumible",
+    "vendor_sell_price": 15
+  },
+  {
+    "item_id": 783,
+    "name_es": "Pellejo ligero",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134369.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 50
+  },
+  {
+    "item_id": 8364,
+    "name_es": "Trucha cabeza de mitril",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133888.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 6
+  },
+  {
+    "item_id": 17058,
+    "name_es": "Aceite de pescado",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134844.jpg",
+    "subclass": "Componente",
+    "class": "Miscelánea",
+    "vendor_sell_price": 7
+  },
+  {
+    "item_id": 6371,
+    "name_es": "Aceite de Fuego",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134818.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 12
+  },
+  {
+    "item_id": 7286,
+    "name_es": "Escama de cría negra",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134310.jpg",
+    "subclass": "Cuero",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 25
+  },
+  {
+    "item_id": 12238,
+    "name_es": "Mero de Costa Oscura",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133912.jpg",
+    "subclass": "Comida y bebida",
+    "class": "Consumible",
+    "vendor_sell_price": 2
+  },
+  {
+    "item_id": 255716,
+    "name_es": "Cataplasma simple",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/4554333.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 28
+  },
+  {
+    "item_id": 7071,
+    "name_es": "Hebilla de hierro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133607.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 12184,
+    "name_es": "Carne de raptor",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134025.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 87
+  },
+  {
+    "item_id": 1251,
+    "name_es": "Venda de lino",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133685.jpg",
+    "subclass": "Vendas",
+    "class": "Consumible",
+    "vendor_sell_price": 10
+  },
+  {
+    "item_id": 4357,
+    "name_es": "Pólvora férrea",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133848.jpg",
+    "subclass": "Piezas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 21153,
+    "name_es": "Sabiola cruda superior",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133907.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 125
+  },
+  {
+    "item_id": 3819,
+    "name_es": "Invernalia",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133940.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 12203,
+    "name_es": "Carne de lobo rojo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134027.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 87
+  },
+  {
+    "item_id": 11370,
+    "name_es": "Mena de hierro negro",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134575.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 500
+  },
+  {
+    "item_id": 249391,
+    "name_es": "Pirita",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/961627.jpg",
+    "subclass": "Metal y piedra",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 100
+  },
+  {
+    "item_id": 3355,
+    "name_es": "Acérita salvaje",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133938.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 50
+  },
+  {
+    "item_id": 3685,
+    "name_es": "Huevo de raptor",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132834.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 71
+  },
+  {
+    "item_id": 8151,
+    "name_es": "Frasco de mojo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134776.jpg",
+    "subclass": "Otros",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 250
+  },
+  {
+    "item_id": 13758,
+    "name_es": "Branquirrojo crudo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133892.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 4
+  },
+  {
+    "item_id": 6289,
+    "name_es": "Pargo de lodo boquilargo crudo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133918.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1
+  },
+  {
+    "item_id": 279981,
+    "name_es": "Hoguera básica",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/7808148.jpg",
+    "subclass": "Otros",
+    "class": "Consumible",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 12202,
+    "name_es": "Carne de tigre",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/133970.jpg",
+    "subclass": "Cocina",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 87
+  },
+  {
+    "item_id": 254432,
+    "name_es": "Tótem de los centauros tallado",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/442743.jpg",
+    "subclass": "Chatarra",
+    "class": "Miscelánea",
+    "vendor_sell_price": 0
+  },
+  {
+    "item_id": 2320,
+    "name_es": "Hilo burdo",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132891.jpg",
+    "subclass": "Tela",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 2
+  },
+  {
+    "item_id": 3340,
+    "name_es": "Mena de incendicita",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134577.jpg",
+    "subclass": "Misión",
+    "class": "Misión",
+    "vendor_sell_price": 31
+  },
+  {
+    "item_id": 247754,
+    "name_es": "Elixir arcano menor",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134728.jpg",
+    "subclass": "Elixires",
+    "class": "Consumible",
+    "vendor_sell_price": 5
+  },
+  {
+    "item_id": 274964,
+    "name_es": "Mota de magia inestable",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132849.jpg",
+    "subclass": "Otros",
+    "class": "Miscelánea",
+    "vendor_sell_price": 200
+  },
+  {
+    "item_id": 3357,
+    "name_es": "Vidarraíz",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/134413.jpg",
+    "subclass": "Hierbas",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 75
+  },
+  {
+    "item_id": 10938,
+    "name_es": "Esencia mágica inferior",
+    "icon_url": "https://render.worldofwarcraft.com/forever-us/icons/56/132867.jpg",
+    "subclass": "Encantamiento",
+    "class": "Objeto comerciable",
+    "vendor_sell_price": 1
+  }
+]

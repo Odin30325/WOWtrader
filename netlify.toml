@@ -1,0 +1,21 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  DEFAULT_RULESET_ID = "1"
+  DEFAULT_HOUSE_ID = "110"
+  BLIZZARD_REGION = "us"
+  BLIZZARD_LOCALE = "es_MX"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Headers de seguridad y compresión
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

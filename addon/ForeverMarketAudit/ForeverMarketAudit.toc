@@ -1,0 +1,8 @@
+## Interface: 106001
+## Title: Forever Market Audit (Clan Edition)
+## Notes: Escaneo de mercado y tooltips de arbitraje horario para WoW: Forever
+## Author: Odin
+## Version: 1.0.0
+## SavedVariables: ForeverMarketAuditDB
+ForeverMarketData.lua
+ForeverMarketAudit.lua
