@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -19,6 +19,7 @@ import {
   Search,
   ShieldAlert,
   Sparkles,
+  Store,
   TrendingUp,
   UploadCloud,
   Users,
@@ -53,7 +54,7 @@ interface ArbitrageRow {
 interface ProfessionRecipe {
   recipe_id: number;
   name_es: string;
-  profession: "Ingeniería" | "Minería";
+  profession: string;
   is_forever_exclusive: boolean;
   output_item_id: number;
   output_name_es: string;
@@ -69,6 +70,7 @@ interface ProfessionRecipe {
     unit_p10: number;
     subtotal_p10: number;
     available_quantity: number;
+    price_source: "vendor_npc" | "ah_p10" | "missing";
   }>;
   total_craft_cost: number;
   gross_sale_value: number;
@@ -76,6 +78,7 @@ interface ProfessionRecipe {
   net_profit_copper: number;
   net_roi_pct: number;
   is_profitable: boolean;
+  has_all_prices: boolean;
 }
 
 interface LeaderboardEntry {
@@ -94,6 +97,8 @@ interface MarketOverview {
   last_blizzard_sync: string | null;
   last_guild_sync: string | null;
   categories: string[];
+  professions?: string[];
+  total_recipes?: number;
 }
 
 interface ItemDetailData {
@@ -103,6 +108,7 @@ interface ItemDetailData {
     icon_url: string;
     category: string;
     vendor_sell_price: number;
+    vendor_buy_price?: number;
     current_p10: number;
     current_min: number;
     current_median: number;
@@ -147,6 +153,22 @@ const DAY_LABELS = [
   "Jue (Raid)",
   "Vie",
   "Sáb",
+];
+
+const PROFESSIONS_LIST = [
+  "Todas",
+  "Ingeniería",
+  "Minería",
+  "Alquimia",
+  "Herrería",
+  "Cocina",
+  "Sastrería",
+  "Peletería",
+  "Encantamiento",
+  "Primeros auxilios",
+  "Pesca",
+  "Herboristería",
+  "Desuello",
 ];
 
 const SAMPLE_CLAN_LUA = `-- Escaneo rápido de ForeverMarketAudit (Clan Edition - TOC 106001)
@@ -213,7 +235,7 @@ export default function ForeverMarketDashboard() {
   >("radar");
 
   const [houseId, setHouseId] = useState<number>(110);
-  const [minLiquidity, setMinLiquidity] = useState<number>(50);
+  const [minLiquidity, setMinLiquidity] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState<string>("Todas");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -230,13 +252,13 @@ export default function ForeverMarketDashboard() {
   const [itemDetail, setItemDetail] = useState<ItemDetailData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
 
-  // Vista 3: Filtros de Laboratorio de Profesiones
-  const [profFilter, setProfFilter] = useState<"Todas" | "Ingeniería" | "Minería">(
-    "Todas"
-  );
+  // Vista 3: Filtros de Laboratorio de Profesiones (12 Profesiones y Subprofesiones)
+  const [profFilter, setProfFilter] = useState<string>("Todas");
+  const [recipeSearchQuery, setRecipeSearchQuery] = useState<string>("");
   const [onlyForeverRecipes, setOnlyForeverRecipes] = useState<boolean>(false);
   const [onlyProfitableRecipes, setOnlyProfitableRecipes] =
     useState<boolean>(false);
+  const [onlyActiveAhRecipes, setOnlyActiveAhRecipes] = useState<boolean>(true);
 
   // Vista 4: Zona del Clan (Uploader Drag & Drop)
   const [clanPlayerName, setClanPlayerName] = useState<string>("Odin");
@@ -400,12 +422,41 @@ export default function ForeverMarketDashboard() {
     await handleUploadSavedVariablesContent(text);
   };
 
-  const filteredProfessions = professions.filter((p) => {
-    if (profFilter !== "Todas" && p.profession !== profFilter) return false;
-    if (onlyForeverRecipes && !p.is_forever_exclusive) return false;
-    if (onlyProfitableRecipes && !p.is_profitable) return false;
-    return true;
-  });
+  const professionCounts = useMemo(() => {
+    const counts: Record<string, number> = { Todas: professions.length };
+    for (const p of professions) {
+      counts[p.profession] = (counts[p.profession] || 0) + 1;
+    }
+    return counts;
+  }, [professions]);
+
+  const filteredProfessions = useMemo(() => {
+    const q = recipeSearchQuery.trim().toLowerCase();
+    return professions
+      .filter((p) => {
+        if (profFilter !== "Todas" && p.profession !== profFilter) return false;
+        if (onlyForeverRecipes && !p.is_forever_exclusive) return false;
+        if (onlyProfitableRecipes && !p.is_profitable) return false;
+        if (onlyActiveAhRecipes && !p.has_all_prices && !q) return false;
+        if (q) {
+          const matchRecipe =
+            p.name_es.toLowerCase().includes(q) ||
+            p.output_name_es.toLowerCase().includes(q) ||
+            String(p.output_item_id).includes(q) ||
+            p.reagents.some((rg) => rg.name_es.toLowerCase().includes(q));
+          if (!matchRecipe) return false;
+        }
+        return true;
+      })
+      .slice(0, 120);
+  }, [
+    professions,
+    profFilter,
+    onlyForeverRecipes,
+    onlyProfitableRecipes,
+    onlyActiveAhRecipes,
+    recipeSearchQuery,
+  ]);
 
   // Calcular rango para colorear el Heatmap 7x24 en la Vista 2
   const heatmapValues =
@@ -421,7 +472,7 @@ export default function ForeverMarketDashboard() {
     }
     const ratio = (val - minHeatP10) / (maxHeatP10 - minHeatP10);
     if (ratio <= 0.22) {
-      return "bg-emerald-500/30 text-emerald-200 border-emerald-500/50 font-semibold"; // Hora Valle (Compra)
+      return "bg-emerald-500/30 text-emerald-200 border-emerald-500/50 font-semibold";
     }
     if (ratio <= 0.42) {
       return "bg-teal-500/20 text-teal-200 border-teal-500/30";
@@ -432,7 +483,7 @@ export default function ForeverMarketDashboard() {
     if (ratio <= 0.85) {
       return "bg-amber-500/25 text-amber-200 border-amber-500/40";
     }
-    return "bg-rose-500/35 text-rose-100 border-rose-500/60 font-semibold"; // Hora Pico Raid (Venta)
+    return "bg-rose-500/35 text-rose-100 border-rose-500/60 font-semibold";
   };
 
   return (
@@ -453,12 +504,12 @@ export default function ForeverMarketDashboard() {
                   v1.60.1_70399 · TOC 106001
                 </span>
                 <span className="hidden md:inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  dynamic-forever-us
+                  dynamic-forever-us + static-forever-us
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Sistema Híbrido de Auditoría Anti-Manipulación (P10) y Arbitraje
-                Intradía · Arquitectura Realmless por Rulesets
+                Auditoría de Armas, Armaduras, Materiales y las 12 Profesiones
+                Oficiales · Algoritmo P10 Anti-Manipulación
               </p>
             </div>
           </div>
@@ -501,7 +552,7 @@ export default function ForeverMarketDashboard() {
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition"
             >
               <Download className="w-3.5 h-3.5" />
-               ForeverMarketData.lua
+              ForeverMarketData.lua
             </a>
           </div>
         </div>
@@ -530,7 +581,7 @@ export default function ForeverMarketDashboard() {
             }`}
           >
             <Activity className="w-4 h-4" />
-            1. Radar de Arbitraje Intradía
+            1. Radar de Arbitraje (Equipo, Armas y Materiales)
           </button>
 
           <button
@@ -554,7 +605,8 @@ export default function ForeverMarketDashboard() {
             }`}
           >
             <Hammer className="w-4 h-4" />
-            3. Laboratorio de Profesiones (Forever)
+            3. Laboratorio de 12 Profesiones (
+            {overview?.total_recipes?.toLocaleString() || "2,310"} Recetas)
           </button>
 
           <button
@@ -577,7 +629,7 @@ export default function ForeverMarketDashboard() {
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <div className="rounded-xl border border-slate-800/90 bg-[#0b1120] p-4">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Ítems Únicos Auditados (House #{houseId})</span>
+              <span>Ítems Activos en Subasta (House #{houseId})</span>
               <Sparkles className="w-4 h-4 text-sky-400" />
             </div>
             <div className="mt-1.5 text-2xl font-bold text-white">
@@ -586,8 +638,7 @@ export default function ForeverMarketDashboard() {
                 : "..."}
             </div>
             <div className="mt-1 text-[11px] text-slate-400">
-              Clave primaria deduplicada:{" "}
-              <code className="text-sky-300">house_id={houseId} + us</code>
+              Armas, Armaduras, Bolsas, Recetas, Consumibles y Materias Primas
             </div>
           </div>
 
@@ -609,22 +660,17 @@ export default function ForeverMarketDashboard() {
 
           <div className="rounded-xl border border-slate-800/90 bg-[#0b1120] p-4">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Series Temporales (market_snapshots)</span>
-              <Clock className="w-4 h-4 text-amber-400" />
+              <span>Recetas Oficiales Forever Auditadas</span>
+              <Hammer className="w-4 h-4 text-amber-400" />
             </div>
             <div className="mt-1.5 text-2xl font-bold text-amber-300">
-              {overview ? overview.total_snapshots.toLocaleString() : "..."}
+              {overview?.total_recipes
+                ? overview.total_recipes.toLocaleString()
+                : professions.length.toLocaleString()}
             </div>
             <div className="mt-1 text-[11px] text-slate-400">
-              Último corte Blizzard:{" "}
-              <span className="text-slate-200">
-                {overview?.last_blizzard_sync
-                  ? new Date(overview.last_blizzard_sync).toLocaleTimeString(
-                      [],
-                      { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }
-                    ) + " UTC"
-                  : "Sincronizando..."}
-              </span>
+              12 Profesiones y Subprofesiones desde{" "}
+              <code className="text-amber-300">static-forever-us</code>
             </div>
           </div>
 
@@ -647,68 +693,77 @@ export default function ForeverMarketDashboard() {
         ===================================================================== */}
         {activeTab === "radar" && (
           <section className="space-y-4">
-            {/* Barra de Filtros del Radar */}
+            {/* Barra de Filtros Rápidos por Categoría */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              {[
+                "Todas",
+                "Armas",
+                "Armaduras",
+                "Bolsas y Contenedores",
+                "Alquimia y Pociones",
+                "Cocina y Pesca",
+                "Ingeniería",
+                "Minería",
+                "Herboristería",
+                "Sastrería y Peletería",
+                "Encantamiento",
+                "Primeros auxilios",
+                "Recetas y Patrones",
+                "Cajones Forever",
+                "Proyectiles y Munición",
+              ].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition ${
+                    selectedCategory === cat
+                      ? "bg-sky-500 text-slate-950 border-sky-400 shadow-sm"
+                      : "bg-[#0b1120] text-slate-300 border-slate-800 hover:border-slate-600"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Barra de Búsqueda y Filtro de Liquidez */}
             <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3 flex-1">
                 {/* Buscador */}
-                <div className="relative min-w-[240px] flex-1 max-w-sm">
+                <div className="relative min-w-[260px] flex-1 max-w-md">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar mena, hierba, C-GUR, EZ-Thro o item_id..."
+                    placeholder="Buscar espada, armadura, bolsa, poción, mena, C-GUR o ID..."
                     className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900 border border-slate-700/80 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
                   />
                 </div>
 
-                {/* Categoría */}
-                <div className="flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2">
-                  <Filter className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-xs text-slate-400">Categoría:</span>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="bg-transparent text-xs sm:text-sm font-medium text-white focus:outline-none"
-                  >
-                    {(
-                      overview?.categories || [
-                        "Todas",
-                        "Minería",
-                        "Ingeniería",
-                        "Herboristería",
-                        "Consumibles",
-                        "Cajones Forever",
-                        "Sastrería y Peletería",
-                      ]
-                    ).map((cat) => (
-                      <option
-                        key={cat}
-                        value={cat}
-                        className="bg-slate-900 text-white"
-                      >
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Filtro de Liquidez (Ocultar total_quantity < 50) */}
+                {/* Filtro de Liquidez */}
                 <div className="flex items-center gap-2.5 bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2">
+                  <Filter className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-xs text-slate-300 font-medium">
-                    Filtro de Liquidez:
+                    Liquidez Mínima:
                   </span>
                   <select
                     value={minLiquidity}
                     onChange={(e) => setMinLiquidity(Number(e.target.value))}
                     className="bg-slate-800 text-xs font-semibold text-emerald-300 rounded px-2 py-0.5 focus:outline-none border border-emerald-500/30"
                   >
-                    <option value={50}>
-                      ≥ 50 uds (Ocultar ilíquidos - Recomendado)
+                    <option value={1}>
+                      ≥ 1 ud (Incluir Armas, Armaduras, Bolsas y Materiales)
                     </option>
-                    <option value={200}>≥ 200 uds (Alta liquidez)</option>
-                    <option value={1000}>≥ 1,000 uds (Commodities masivas)</option>
-                    <option value={1}>≥ 1 ud (Mostrar todo)</option>
+                    <option value={5}>
+                      ≥ 5 uds (Equipamiento Frecuente y Consumibles)
+                    </option>
+                    <option value={50}>
+                      ≥ 50 uds (Alta Liquidez: Materias Primas y Consumibles)
+                    </option>
+                    <option value={250}>
+                      ≥ 250 uds (Commodities de Gran Volumen)
+                    </option>
                   </select>
                 </div>
               </div>
@@ -716,7 +771,7 @@ export default function ForeverMarketDashboard() {
               <div className="text-xs text-slate-400">
                 Mostrando{" "}
                 <span className="text-white font-semibold">{radar.length}</span>{" "}
-                oportunidades reales · Haz clic en cualquier fila para ver su{" "}
+                objetos auditados · Haz clic en cualquiera para ver su{" "}
                 <span className="text-emerald-400 font-medium">
                   Curva 24h y Heatmap
                 </span>
@@ -735,7 +790,7 @@ export default function ForeverMarketDashboard() {
                       <th className="py-3.5 px-3">Hora Ideal Venta (Pico)</th>
                       <th className="py-3.5 px-3">Precio P10 Pico</th>
                       <th className="py-3.5 px-3 text-right">
-                        Volumen Diario / Stock
+                        Volumen / Lotes
                       </th>
                       <th className="py-3.5 px-3 text-right">
                         Ganancia Neta / Ud
@@ -780,9 +835,9 @@ export default function ForeverMarketDashboard() {
                                 className="w-9 h-9 rounded-lg border border-slate-700 group-hover:border-sky-400 transition object-cover bg-slate-950"
                               />
                               <div>
-                                <div className="font-semibold text-white group-hover:text-sky-300 transition flex items-center gap-2">
+                                <div className="font-semibold text-white group-hover:text-sky-300 transition flex items-center gap-2 flex-wrap">
                                   <span>{item.name_es}</span>
-                                  {item.item_id > 240000 && (
+                                  {item.item_id > 200000 && (
                                     <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
                                       FOREVER
                                     </span>
@@ -797,14 +852,14 @@ export default function ForeverMarketDashboard() {
                                       className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-rose-500/20 text-rose-300 border border-rose-500/30"
                                     >
                                       <AlertTriangle className="w-3 h-3" />
-                                      Bait 1c Filtrado
+                                      Bait Filtrado
                                     </span>
                                   )}
                                 </div>
                                 <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                                   <span>ID #{item.item_id}</span>
                                   <span>·</span>
-                                  <span className="text-slate-300">
+                                  <span className="text-sky-300/90 font-medium">
                                     {item.category}
                                   </span>
                                   <span>·</span>
@@ -928,7 +983,7 @@ export default function ForeverMarketDashboard() {
                 <select
                   value={selectedItemId}
                   onChange={(e) => setSelectedItemId(Number(e.target.value))}
-                  className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white font-medium focus:outline-none focus:border-sky-500"
+                  className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white font-medium focus:outline-none focus:border-sky-500 max-w-xs"
                 >
                   {radar.map((r) => (
                     <option
@@ -966,7 +1021,9 @@ export default function ForeverMarketDashboard() {
 
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3.5">
                     <div className="text-[11px] text-emerald-300 font-medium">
-                      Hora Valle Compra ({String(itemDetail.item.valley_hour).padStart(2, "0")}:00 UTC)
+                      Hora Valle Compra (
+                      {String(itemDetail.item.valley_hour).padStart(2, "0")}:00
+                      UTC)
                     </div>
                     <div className="mt-1 text-base font-bold">
                       <WowMoney copper={itemDetail.item.valley_p10} />
@@ -978,7 +1035,9 @@ export default function ForeverMarketDashboard() {
 
                   <div className="rounded-xl border border-amber-500/30 bg-amber-950/15 p-3.5">
                     <div className="text-[11px] text-amber-300 font-medium">
-                      Hora Pico Venta ({String(itemDetail.item.peak_hour).padStart(2, "0")}:00 UTC)
+                      Hora Pico Venta (
+                      {String(itemDetail.item.peak_hour).padStart(2, "0")}:00
+                      UTC)
                     </div>
                     <div className="mt-1 text-base font-bold">
                       <WowMoney copper={itemDetail.item.peak_p10} />
@@ -1030,7 +1089,9 @@ export default function ForeverMarketDashboard() {
                       Curva Horaria Promedio 24h (UTC)
                     </h3>
                     <p className="text-xs text-slate-400 mb-3">
-                      Comparativa de precio suelo <code className="text-emerald-300">p10_price</code> por hora del día (00h a 23h)
+                      Comparativa de precio suelo{" "}
+                      <code className="text-emerald-300">p10_price</code> por
+                      hora del día (00h a 23h)
                     </p>
                     <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
                       {itemDetail.hourlyCurve24h.map((h) => {
@@ -1086,8 +1147,9 @@ export default function ForeverMarketDashboard() {
                           Mapa de Calor Semanal (7 Días × 24 Horas UTC)
                         </h3>
                         <p className="text-xs text-slate-400">
-                          Verde = Horas Valle (Acumular Stock barato) · Ámbar/Rojo
-                          = Horas Pico de Raid (Vender con máximo margen)
+                          Verde = Horas Valle (Acumular Stock barato) ·
+                          Ámbar/Rojo = Horas Pico de Raid (Vender con máximo
+                          margen)
                         </p>
                       </div>
                       <div className="flex items-center gap-2 text-[11px]">
@@ -1168,38 +1230,48 @@ export default function ForeverMarketDashboard() {
         )}
 
         {/* =====================================================================
-            VISTA 3: LABORATORIO DE PROFESIONES (MINERÍA & INGENIERÍA EN FOREVER)
+            VISTA 3: LABORATORIO DE LAS 12 PROFESIONES Y SUBPROFESIONES EN FOREVER
         ===================================================================== */}
         {activeTab === "professions" && (
           <section className="space-y-4">
-            <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <Hammer className="w-5 h-5 text-amber-400" />
-                  Laboratorio de Profesiones (Minería & Ingeniería en WoW: Forever)
-                </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Cruza <code className="text-amber-300">recipes_catalog</code>{" "}
-                  contra el último <code className="text-sky-300">market_snapshots</code>{" "}
-                  comprando materiales al suelo real <code className="text-emerald-300">p10_price</code> y descontando el 5% de comisión AH
-                </p>
-              </div>
+            {/* Selector de las 12 Profesiones y Subprofesiones */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              {PROFESSIONS_LIST.map((prof) => (
+                <button
+                  key={prof}
+                  onClick={() => setProfFilter(prof)}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition flex items-center gap-1.5 ${
+                    profFilter === prof
+                      ? "bg-amber-500 text-slate-950 border-amber-400 shadow-sm"
+                      : "bg-[#0b1120] text-slate-300 border-slate-800 hover:border-slate-600"
+                  }`}
+                >
+                  <span>{prof}</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                      profFilter === prof
+                        ? "bg-slate-950/20 text-slate-950 font-bold"
+                        : "bg-slate-800 text-slate-400"
+                    }`}
+                  >
+                    {professionCounts[prof] || 0}
+                  </span>
+                </button>
+              ))}
+            </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex rounded-lg bg-slate-900 p-1 border border-slate-800 text-xs font-semibold">
-                  {(["Todas", "Ingeniería", "Minería"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setProfFilter(tab)}
-                      className={`px-3 py-1.5 rounded-md transition ${
-                        profFilter === tab
-                          ? "bg-amber-500 text-slate-950"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
+            {/* Barra de Filtros y Buscador de Recetas */}
+            <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-3 flex-1">
+                <div className="relative min-w-[260px] flex-1 max-w-md">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={recipeSearchQuery}
+                    onChange={(e) => setRecipeSearchQuery(e.target.value)}
+                    placeholder="Buscar receta o material (ej. tornillos de cobre, C-GUR, poción, bolsa, espada)..."
+                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900 border border-slate-700/80 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  />
                 </div>
 
                 <label className="inline-flex items-center gap-2 text-xs text-purple-300 bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-2 cursor-pointer">
@@ -1209,7 +1281,7 @@ export default function ForeverMarketDashboard() {
                     onChange={(e) => setOnlyForeverRecipes(e.target.checked)}
                     className="rounded accent-purple-500"
                   />
-                  <span>Solo Recetas Nuevas de Forever (C-GUR / EZ-Thro / Bots)</span>
+                  <span>Solo Recetas Nuevas de Forever</span>
                 </label>
 
                 <label className="inline-flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 cursor-pointer">
@@ -1223,9 +1295,29 @@ export default function ForeverMarketDashboard() {
                   />
                   <span>Solo Ganancia Positiva Hoy</span>
                 </label>
+
+                <label className="inline-flex items-center gap-2 text-xs text-sky-300 bg-sky-500/10 border border-sky-500/30 rounded-lg px-3 py-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={onlyActiveAhRecipes}
+                    onChange={(e) => setOnlyActiveAhRecipes(e.target.checked)}
+                    className="rounded accent-sky-500"
+                  />
+                  <span>Solo con Stock en Subasta</span>
+                </label>
+              </div>
+
+              <div className="text-xs text-slate-400">
+                Mostrando{" "}
+                <span className="text-white font-semibold">
+                  {filteredProfessions.length}
+                </span>{" "}
+                recetas oficiales (Datos directos de{" "}
+                <code className="text-amber-300">static-forever-us</code>)
               </div>
             </div>
 
+            {/* Grid de Recetas */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredProfessions.map((rec) => (
                 <div
@@ -1239,49 +1331,63 @@ export default function ForeverMarketDashboard() {
                   <div>
                     {/* Cabecera de la Receta */}
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                      <div
+                        onClick={() =>
+                          handleOpenItemDetail(rec.output_item_id)
+                        }
+                        className="flex items-center gap-3 cursor-pointer group"
+                      >
                         <img
                           src={rec.output_icon_url}
                           alt={rec.output_name_es}
-                          className="w-11 h-11 rounded-lg border border-slate-700"
+                          className="w-11 h-11 rounded-lg border border-slate-700 group-hover:border-amber-400 transition"
                         />
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <h3 className="font-bold text-sm text-white">
+                            <h3 className="font-bold text-sm text-white group-hover:text-amber-300 transition">
                               {rec.name_es}
                             </h3>
                             {rec.is_forever_exclusive && (
                               <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                                NUEVO EN FOREVER
+                                FOREVER
                               </span>
                             )}
                           </div>
                           <div className="text-xs text-slate-400 mt-0.5">
-                            {rec.profession} · Produce{" "}
+                            <span className="text-amber-300/90 font-medium">
+                              {rec.profession}
+                            </span>{" "}
+                            · Produce{" "}
                             <span className="text-white font-semibold">
                               {rec.output_quantity}x
                             </span>{" "}
-                            ({rec.output_market_volume.toLocaleString()} uds en AH)
+                            ({rec.output_market_volume.toLocaleString()} uds en
+                            AH)
                           </div>
                         </div>
                       </div>
 
                       <span
                         className={`px-2.5 py-1 rounded-full font-mono text-xs font-bold whitespace-nowrap ${
-                          rec.is_profitable
+                          !rec.has_all_prices
+                            ? "bg-slate-800 text-slate-400 border border-slate-700"
+                            : rec.is_profitable
                             ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                             : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
                         }`}
                       >
-                        {rec.net_roi_pct > 0 ? "+" : ""}
-                        {rec.net_roi_pct.toFixed(1)}% ROI
+                        {!rec.has_all_prices
+                          ? "Sin Stock AH"
+                          : `${
+                              rec.net_roi_pct > 0 ? "+" : ""
+                            }${rec.net_roi_pct.toFixed(1)}% ROI`}
                       </span>
                     </div>
 
                     {/* Lista de Materiales (Reagents) */}
                     <div className="mt-3.5 pt-3 border-t border-slate-800/80 space-y-2">
                       <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
-                        Materiales Requeridos (a precio P10):
+                        Materiales Requeridos (Suelo P10 / NPC Vendedor):
                       </div>
                       {rec.reagents.map((rg) => (
                         <div
@@ -1289,17 +1395,32 @@ export default function ForeverMarketDashboard() {
                           onClick={() => handleOpenItemDetail(rg.item_id)}
                           className="flex items-center justify-between text-xs bg-slate-900/70 hover:bg-slate-800/80 px-2.5 py-1.5 rounded-lg cursor-pointer transition"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
                             <img
                               src={rg.icon_url}
                               alt={rg.name_es}
-                              className="w-5 h-5 rounded"
+                              className="w-5 h-5 rounded shrink-0"
                             />
-                            <span className="text-slate-200 font-medium">
+                            <span className="text-slate-200 font-medium truncate">
                               {rg.count}x {rg.name_es}
                             </span>
+                            {rg.price_source === "vendor_npc" && (
+                              <span
+                                title="Se compra directamente a vendedor NPC"
+                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0"
+                              >
+                                <Store className="w-2.5 h-2.5" />
+                                NPC
+                              </span>
+                            )}
                           </div>
-                          <WowMoney copper={rg.subtotal_p10} />
+                          {rg.subtotal_p10 > 0 ? (
+                            <WowMoney copper={rg.subtotal_p10} />
+                          ) : (
+                            <span className="text-slate-500 text-[11px]">
+                              Sin stock
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1308,19 +1429,29 @@ export default function ForeverMarketDashboard() {
                   {/* Resumen Financiero de la Receta */}
                   <div className="mt-4 pt-3 border-t border-slate-800/90 space-y-1.5 text-xs">
                     <div className="flex items-center justify-between text-slate-400">
-                      <span>Costo Materiales (P10):</span>
+                      <span>Costo Total Materiales:</span>
                       <WowMoney copper={rec.total_craft_cost} />
                     </div>
                     <div className="flex items-center justify-between text-slate-400">
                       <span>
                         Venta Neta ({rec.output_quantity}x tras 5% AH):
                       </span>
-                      <WowMoney copper={rec.net_sale_after_ah_cut} />
+                      {rec.net_sale_after_ah_cut > 0 ? (
+                        <WowMoney copper={rec.net_sale_after_ah_cut} />
+                      ) : (
+                        <span className="text-slate-500">Sin ofertas AH</span>
+                      )}
                     </div>
                     <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 font-semibold">
-                      <span className="text-slate-200">
-                        Ganancia Neta por Crafteo:
-                      </span>
+                      <button
+                        onClick={() =>
+                          handleOpenItemDetail(rec.output_item_id)
+                        }
+                        className="text-sky-400 hover:text-sky-300 text-[11px] flex items-center gap-1 underline-offset-2 hover:underline"
+                      >
+                        <BarChart3 className="w-3.5 h-3.5" />
+                        Ver Curva 24h del Producto
+                      </button>
                       <WowMoney
                         copper={rec.net_profit_copper}
                         showSign
@@ -1347,7 +1478,8 @@ export default function ForeverMarketDashboard() {
                   <div>
                     <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                       <UploadCloud className="w-5 h-5 text-sky-400" />
-                      Ingesta Colaborativa del Clan (Subida de SavedVariables entre horas)
+                      Ingesta Colaborativa del Clan (Subida de SavedVariables
+                      entre horas)
                     </h2>
                     <p className="text-xs text-slate-400 mt-0.5">
                       Sube tu archivo{" "}
@@ -1445,9 +1577,9 @@ export default function ForeverMarketDashboard() {
                     </h3>
                     <p className="text-xs text-slate-400 mt-0.5">
                       Descarga la tabla Lua actualizada con las medias horarias
-                      (Valle, Pico, P10, Mediana y Alertas de Bait) para ver toda la
-                      inteligencia directamente en los tooltips dentro de{" "}
-                      <strong>WoW: Forever</strong>.
+                      (Valle, Pico, P10, Mediana y Alertas de Bait) para ver
+                      toda la inteligencia directamente en los tooltips dentro
+                      de <strong>WoW: Forever</strong>.
                     </p>
                   </div>
 
@@ -1467,7 +1599,8 @@ export default function ForeverMarketDashboard() {
                     <code>1.60.1_70399</code>):
                   </div>
                   <code className="block text-slate-300 bg-slate-900 px-3 py-2 rounded border border-slate-800 font-mono">
-                    World of Warcraft/_forever_/Interface/AddOns/ForeverMarketAudit/
+                    World of
+                    Warcraft/_forever_/Interface/AddOns/ForeverMarketAudit/
                   </code>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-slate-400">
                     <div className="bg-slate-900/70 p-2.5 rounded border border-slate-800">
@@ -1487,7 +1620,8 @@ export default function ForeverMarketDashboard() {
                       <strong className="text-white block">
                         3. ForeverMarketAudit.lua
                       </strong>
-                      Escáner legal <code>C_AuctionHouse</code> y hook de Tooltips
+                      Escáner legal <code>C_AuctionHouse</code> y hook de
+                      Tooltips
                     </div>
                   </div>
                 </div>
@@ -1536,7 +1670,8 @@ export default function ForeverMarketDashboard() {
                           </div>
                           <div className="text-[11px] text-slate-400">
                             {entry.snapshots_count} cortes ·{" "}
-                            {entry.items_audited.toLocaleString()} ítems auditados
+                            {entry.items_audited.toLocaleString()} ítems
+                            auditados
                           </div>
                         </div>
                       </div>
@@ -1545,11 +1680,14 @@ export default function ForeverMarketDashboard() {
                           {entry.points.toLocaleString()} pts
                         </div>
                         <div className="text-[10px] text-slate-500">
-                          {new Date(entry.last_upload_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            timeZone: "UTC",
-                          })}{" "}
+                          {new Date(entry.last_upload_at).toLocaleTimeString(
+                            [],
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              timeZone: "UTC",
+                            }
+                          )}{" "}
                           UTC
                         </div>
                       </div>

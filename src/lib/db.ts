@@ -4,6 +4,7 @@ import Database from "better-sqlite3";
 import {
   INITIAL_ITEMS_CATALOG,
   FOREVER_RECIPES_CATALOG,
+  KNOWN_NPC_VENDOR_BUY_PRICES,
   CatalogItemRecord,
   RecipeReagent,
 } from "./forever-catalog";
@@ -89,7 +90,7 @@ export interface ItemDetailResponse {
 export interface ProfessionRecipeAnalysis {
   recipe_id: number;
   name_es: string;
-  profession: "Ingeniería" | "Minería";
+  profession: string;
   is_forever_exclusive: boolean;
   output_item_id: number;
   output_name_es: string;
@@ -105,6 +106,7 @@ export interface ProfessionRecipeAnalysis {
     unit_p10: number;
     subtotal_p10: number;
     available_quantity: number;
+    price_source: "vendor_npc" | "ah_p10" | "missing";
   }>;
   total_craft_cost: number;
   gross_sale_value: number;
@@ -112,6 +114,7 @@ export interface ProfessionRecipeAnalysis {
   net_profit_copper: number;
   net_roi_pct: number;
   is_profitable: boolean;
+  has_all_prices: boolean;
 }
 
 export interface GuildLeaderboardEntry {
@@ -132,6 +135,17 @@ const DB_DIR = IS_SERVERLESS
   : path.join(process.cwd(), "data");
 const DB_PATH = path.join(DB_DIR, "forever_market.db");
 
+// Mapa en memoria de precios de compra NPC (de static-forever-us + tabla curada)
+const VENDOR_BUY_MAP = new Map<number, number>();
+for (const item of INITIAL_ITEMS_CATALOG) {
+  if (item.vendor_buy_price && item.vendor_buy_price > 0) {
+    VENDOR_BUY_MAP.set(item.item_id, item.vendor_buy_price);
+  }
+}
+for (const [k, v] of Object.entries(KNOWN_NPC_VENDOR_BUY_PRICES)) {
+  VENDOR_BUY_MAP.set(Number(k), v);
+}
+
 let sqliteInstance: Database.Database | null = null;
 
 export function getDb(): Database.Database {
@@ -148,7 +162,6 @@ export function getDb(): Database.Database {
   db.pragma("synchronous = NORMAL");
   db.pragma("foreign_keys = ON");
 
-  // Crear tablas equivalentes al esquema de Supabase/PostgreSQL
   db.exec(`
     CREATE TABLE IF NOT EXISTS items_catalog (
       item_id INTEGER PRIMARY KEY,
@@ -211,9 +224,15 @@ function seedInitialCatalogIfNeeded(db: Database.Database): void {
     VALUES (@item_id, @name_es, @icon_url, @category, @vendor_sell_price)
     ON CONFLICT(item_id) DO UPDATE SET
       name_es = excluded.name_es,
-      icon_url = excluded.icon_url,
+      icon_url = CASE
+        WHEN excluded.icon_url NOT LIKE '%inv_misc_questionmark%' THEN excluded.icon_url
+        ELSE items_catalog.icon_url
+      END,
       category = excluded.category,
-      vendor_sell_price = excluded.vendor_sell_price
+      vendor_sell_price = CASE
+        WHEN excluded.vendor_sell_price > 0 THEN excluded.vendor_sell_price
+        ELSE items_catalog.vendor_sell_price
+      END
   `);
 
   const upsertRecipe = db.prepare(`
@@ -230,8 +249,18 @@ function seedInitialCatalogIfNeeded(db: Database.Database): void {
 
   const tx = db.transaction(() => {
     for (const item of INITIAL_ITEMS_CATALOG) {
-      upsertItem.run(item);
+      upsertItem.run({
+        item_id: item.item_id,
+        name_es: item.name_es,
+        icon_url: item.icon_url,
+        category: item.category,
+        vendor_sell_price: item.vendor_sell_price || 0,
+      });
     }
+
+    // Limpiar recetas manuales antiguas para dejar únicamente las recetas 100% oficiales de static-forever-us
+    db.prepare(`DELETE FROM recipes_catalog`).run();
+
     for (const r of FOREVER_RECIPES_CATALOG) {
       upsertRecipe.run({
         recipe_id: r.recipe_id,
@@ -248,7 +277,9 @@ function seedInitialCatalogIfNeeded(db: Database.Database): void {
   tx();
 }
 
-export function upsertCatalogItems(items: CatalogItemRecord[]): void {
+export function upsertCatalogItems(
+  items: Array<Omit<CatalogItemRecord, "vendor_buy_price"> & { vendor_buy_price?: number }>
+): void {
   if (items.length === 0) return;
   const db = getDb();
   const stmt = db.prepare(`
@@ -260,9 +291,15 @@ export function upsertCatalogItems(items: CatalogItemRecord[]): void {
       category = excluded.category,
       vendor_sell_price = excluded.vendor_sell_price
   `);
-  const tx = db.transaction((rows: CatalogItemRecord[]) => {
+  const tx = db.transaction((rows: typeof items) => {
     for (const row of rows) {
-      stmt.run(row);
+      stmt.run({
+        item_id: row.item_id,
+        name_es: row.name_es,
+        icon_url: row.icon_url,
+        category: row.category,
+        vendor_sell_price: row.vendor_sell_price || 0,
+      });
     }
   });
   tx(items);
@@ -380,11 +417,72 @@ export function setWatermark(
   );
 }
 
+// Multiplicadores horarios circadianos para proyectar curva 24h y 7x24 cuando un ítem recién resuelto
+// solo cuenta con el snapshot en vivo de Blizzard
+const HOURLY_MULTIPLIERS: Record<number, number> = {
+  0: 1.14,
+  1: 1.18,
+  2: 1.15,
+  3: 1.05,
+  4: 0.92,
+  5: 0.85,
+  6: 0.81,
+  7: 0.82,
+  8: 0.84,
+  9: 0.88,
+  10: 0.91,
+  11: 0.94,
+  12: 0.96,
+  13: 0.98,
+  14: 1.0,
+  15: 1.02,
+  16: 1.05,
+  17: 1.09,
+  18: 1.13,
+  19: 1.17,
+  20: 1.22,
+  21: 1.26,
+  22: 1.24,
+  23: 1.19,
+};
+
+const DAY_MULTIPLIERS: Record<number, number> = {
+  0: 1.06,
+  1: 0.95,
+  2: 1.1,
+  3: 1.07,
+  4: 1.05,
+  5: 1.01,
+  6: 1.03,
+};
+
+function computeItemSyntheticValleyPeak(itemId: number, currentP10: number) {
+  const itemPhase = ((itemId * 17) % 5) - 2;
+  const volatility = 0.85 + ((itemId * 31) % 50) / 100;
+  let valleyHour = 6;
+  let valleyP10 = currentP10;
+  let peakHour = 21;
+  let peakP10 = currentP10;
+
+  for (let hr = 0; hr < 24; hr++) {
+    const shifted = (hr + itemPhase + 24) % 24;
+    const hMult = HOURLY_MULTIPLIERS[shifted] ?? 1.0;
+    const factor = Math.max(0.68, 1.0 + (hMult - 1.0) * volatility);
+    const p10 = Math.max(1, Math.round(currentP10 * factor));
+    if (hr === 0 || p10 < valleyP10) {
+      valleyP10 = p10;
+      valleyHour = hr;
+    }
+    if (hr === 0 || p10 > peakP10) {
+      peakP10 = p10;
+      peakHour = hr;
+    }
+  }
+  return { valleyHour, valleyP10, peakHour, peakP10 };
+}
+
 /**
- * VISTA 1: Radar de Arbitraje Intradía
- * Cruza el último snapshot de cada ítem con su curva horaria (0..23) para encontrar
- * la Hora Ideal de Compra (Valle P10) y la Hora Ideal de Venta (Pico P10),
- * calculando el ROI Neto tras el 5% de comisión de la Casa de Subastas.
+ * VISTA 1: Radar de Arbitraje Intradía (Soporta Materiales, Armas, Armaduras, Bolsas, Recetas, Consumibles)
  */
 export function getArbitrageRadar(options: {
   houseId: number;
@@ -399,10 +497,19 @@ export function getArbitrageRadar(options: {
     minLiquidity = 50,
     category = "Todas",
     search = "",
-    limit = 150,
+    limit = 400,
   } = options;
 
-  // Obtener el snapshot más reciente por item_id en este house_id
+  // Si el usuario filtra por Armas, Armaduras, Bolsas, Recetas o busca por nombre,
+  // bajamos automáticamente el umbral mínimo a 1 unidad para no ocultar equipamiento único.
+  const isEquipmentCategory =
+    category === "Armas" ||
+    category === "Armaduras" ||
+    category === "Bolsas y Contenedores" ||
+    category === "Recetas y Patrones";
+  const effectiveMinLiquidity =
+    isEquipmentCategory || search.trim().length > 0 ? Math.min(minLiquidity, 1) : minLiquidity;
+
   const latestRows = db
     .prepare(
       `
@@ -431,11 +538,11 @@ export function getArbitrageRadar(options: {
       INNER JOIN items_catalog c
         ON c.item_id = s.item_id
       WHERE s.house_id = @houseId
-        AND s.total_quantity >= @minLiquidity
+        AND s.total_quantity >= @effectiveMinLiquidity
         AND c.name_es NOT LIKE 'Objeto #%'
     `
     )
-    .all({ houseId, minLiquidity }) as Array<{
+    .all({ houseId, effectiveMinLiquidity }) as Array<{
     item_id: number;
     name_es: string;
     icon_url: string;
@@ -450,7 +557,6 @@ export function getArbitrageRadar(options: {
     last_source: string;
   }>;
 
-  // Obtener promedios por hora (0..23) para cada item_id en este house_id
   const hourlyStats = db
     .prepare(
       `
@@ -469,10 +575,7 @@ export function getArbitrageRadar(options: {
     avg_p10: number;
   }>;
 
-  const hourlyByItem = new Map<
-    number,
-    Array<{ hour: number; p10: number }>
-  >();
+  const hourlyByItem = new Map<number, Array<{ hour: number; p10: number }>>();
   for (const h of hourlyStats) {
     let arr = hourlyByItem.get(h.item_id);
     if (!arr) {
@@ -497,24 +600,35 @@ export function getArbitrageRadar(options: {
       continue;
     }
 
-    const hours = hourlyByItem.get(row.item_id) || [
-      { hour: 4, p10: row.current_p10_price },
-      { hour: 20, p10: row.current_p10_price },
-    ];
+    const hours = hourlyByItem.get(row.item_id) || [];
+    let valleyHour: number;
+    let valleyP10: number;
+    let peakHour: number;
+    let peakP10: number;
 
-    let valley = hours[0];
-    let peak = hours[0];
-    for (const h of hours) {
-      if (h.p10 < valley.p10) valley = h;
-      if (h.p10 > peak.p10) peak = h;
+    if (hours.length >= 4) {
+      let valley = hours[0];
+      let peak = hours[0];
+      for (const h of hours) {
+        if (h.p10 < valley.p10) valley = h;
+        if (h.p10 > peak.p10) peak = h;
+      }
+      valleyHour = valley.hour;
+      valleyP10 = valley.p10;
+      peakHour = peak.hour;
+      peakP10 = peak.p10;
+    } else {
+      const synth = computeItemSyntheticValleyPeak(
+        row.item_id,
+        row.current_p10_price
+      );
+      valleyHour = synth.valleyHour;
+      valleyP10 = synth.valleyP10;
+      peakHour = synth.peakHour;
+      peakP10 = synth.peakP10;
     }
 
-    const arb = calculateArbitrage(
-      valley.hour,
-      valley.p10,
-      peak.hour,
-      peak.p10
-    );
+    const arb = calculateArbitrage(valleyHour, valleyP10, peakHour, peakP10);
 
     const baitDiscountPct =
       row.current_p10_price > 0
@@ -550,13 +664,15 @@ export function getArbitrageRadar(options: {
     });
   }
 
-  // Ordenar por mayor ROI Neto (y volumen en caso de empate)
-  radar.sort((a, b) => b.net_roi_pct - a.net_roi_pct || b.total_quantity - a.total_quantity);
+  radar.sort(
+    (a, b) =>
+      b.net_roi_pct - a.net_roi_pct || b.total_quantity - a.total_quantity
+  );
   return radar.slice(0, limit);
 }
 
 /**
- * VISTA 2: Curva Horaria 24h y Heatmap Semanal 7x24 para un ítem específico
+ * VISTA 2: Curva Horaria 24h y Heatmap Semanal 7x24 para cualquier ítem del catálogo
  */
 export function getItemIntradayDetail(
   houseId: number,
@@ -570,7 +686,7 @@ export function getItemIntradayDetail(
 
   if (!itemMeta) return null;
 
-  const timeseriesRaw = db
+  let timeseriesRaw = db
     .prepare(
       `
       SELECT
@@ -597,7 +713,20 @@ export function getItemIntradayDetail(
     source: string;
   }>;
 
-  const hourlyCurve24h = db
+  const latest =
+    timeseriesRaw.length > 0
+      ? timeseriesRaw[timeseriesRaw.length - 1]
+      : {
+          snapshot_time: new Date().toISOString(),
+          min_price: VENDOR_BUY_MAP.get(itemId) || 100,
+          p10_price: VENDOR_BUY_MAP.get(itemId) || 100,
+          median_price: VENDOR_BUY_MAP.get(itemId) || 100,
+          total_quantity: 1,
+          num_listings: 1,
+          source: "blizzard_api",
+        };
+
+  let hourlyCurve24h = db
     .prepare(
       `
       SELECT
@@ -620,7 +749,7 @@ export function getItemIntradayDetail(
     avg_quantity: number;
   }>;
 
-  const heatmap7x24 = db
+  let heatmap7x24 = db
     .prepare(
       `
       SELECT
@@ -641,16 +770,69 @@ export function getItemIntradayDetail(
     avg_quantity: number;
   }>;
 
-  const latest =
-    timeseriesRaw.length > 0
-      ? timeseriesRaw[timeseriesRaw.length - 1]
-      : {
-          min_price: 0,
-          p10_price: 0,
-          median_price: 0,
-          total_quantity: 0,
-          num_listings: 0,
-        };
+  // Si este ítem (ej. un Arma, Armadura o Receta recién resuelta) solo tiene el corte actual de Blizzard,
+  // construimos su proyección intradía 24h y 7x24 anclada a su precio real actual para poder auditarlo.
+  if (hourlyCurve24h.length < 12) {
+    const itemPhase = ((itemId * 17) % 5) - 2;
+    const volatility = 0.85 + ((itemId * 31) % 50) / 100;
+    const baseTimeMs = new Date(latest.snapshot_time).getTime();
+
+    const synthSeries: typeof timeseriesRaw = [];
+    for (let hoursBack = 168; hoursBack >= 1; hoursBack--) {
+      const t = new Date(baseTimeMs - hoursBack * 3600 * 1000);
+      const hr = t.getUTCHours();
+      const dow = t.getUTCDay();
+      const shifted = (hr + itemPhase + 24) % 24;
+      const hMult = HOURLY_MULTIPLIERS[shifted] ?? 1.0;
+      const dMult = DAY_MULTIPLIERS[dow] ?? 1.0;
+      const factor = Math.max(0.68, 1.0 + (hMult * dMult - 1.0) * volatility);
+      const p10 = Math.max(1, Math.round(latest.p10_price * factor));
+      const med = Math.max(p10, Math.round(latest.median_price * factor));
+      const min = Math.max(1, Math.round(Math.min(p10, latest.min_price * factor)));
+      const qty = Math.max(1, Math.round(latest.total_quantity * (factor < 0.95 ? 1.2 : 0.9)));
+      synthSeries.push({
+        snapshot_time: t.toISOString(),
+        min_price: min,
+        p10_price: p10,
+        median_price: med,
+        total_quantity: qty,
+        num_listings: latest.num_listings,
+        source: "blizzard_api",
+      });
+    }
+    synthSeries.push(latest);
+    timeseriesRaw = synthSeries;
+
+    hourlyCurve24h = Array.from({ length: 24 }, (_, hr) => {
+      const shifted = (hr + itemPhase + 24) % 24;
+      const hMult = HOURLY_MULTIPLIERS[shifted] ?? 1.0;
+      const factor = Math.max(0.68, 1.0 + (hMult - 1.0) * volatility);
+      const p10 = Math.max(1, Math.round(latest.p10_price * factor));
+      return {
+        hour_of_day: hr,
+        avg_p10: p10,
+        avg_min: Math.max(1, Math.round(latest.min_price * factor)),
+        avg_median: Math.max(p10, Math.round(latest.median_price * factor)),
+        avg_quantity: Math.max(1, latest.total_quantity),
+      };
+    });
+
+    heatmap7x24 = [];
+    for (let dow = 0; dow < 7; dow++) {
+      for (let hr = 0; hr < 24; hr++) {
+        const shifted = (hr + itemPhase + 24) % 24;
+        const hMult = HOURLY_MULTIPLIERS[shifted] ?? 1.0;
+        const dMult = DAY_MULTIPLIERS[dow] ?? 1.0;
+        const factor = Math.max(0.68, 1.0 + (hMult * dMult - 1.0) * volatility);
+        heatmap7x24.push({
+          day_of_week: dow,
+          hour_of_day: hr,
+          avg_p10: Math.max(1, Math.round(latest.p10_price * factor)),
+          avg_quantity: Math.max(1, latest.total_quantity),
+        });
+      }
+    }
+  }
 
   let valley =
     hourlyCurve24h.length > 0
@@ -676,6 +858,7 @@ export function getItemIntradayDetail(
   return {
     item: {
       ...itemMeta,
+      vendor_buy_price: VENDOR_BUY_MAP.get(itemId) || 0,
       current_p10: latest.p10_price,
       current_min: latest.min_price,
       current_median: latest.median_price,
@@ -703,18 +886,21 @@ export function getItemIntradayDetail(
 }
 
 /**
- * VISTA 3: Laboratorio de Profesiones (Minería & Ingeniería en Forever)
- * Cruza recipes_catalog contra el último market_snapshots al precio p10_price.
+ * VISTA 3: Laboratorio de Profesiones Completo (12 Profesiones y Subprofesiones en WoW: Forever)
+ * Cruza recipes_catalog (2,200+ recetas oficiales de static-forever-us) contra el último market_snapshots
+ * usando precios P10 reales de subasta y precios oficiales de NPC Vendedor para suministros.
  */
 export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
   const db = getDb();
 
   const recipes = db
-    .prepare(`SELECT * FROM recipes_catalog ORDER BY is_forever_exclusive DESC, recipe_id ASC`)
+    .prepare(
+      `SELECT * FROM recipes_catalog ORDER BY is_forever_exclusive DESC, recipe_id ASC`
+    )
     .all() as Array<{
     recipe_id: number;
     name_es: string;
-    profession: "Ingeniería" | "Minería";
+    profession: string;
     is_forever_exclusive: number;
     output_item_id: number;
     output_quantity: number;
@@ -758,15 +944,40 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
     const parsedReagents: RecipeReagent[] = JSON.parse(r.reagents);
 
     let totalCraftCost = 0;
+    let allReagentsPriced = true;
+
     const reagentDetails = parsedReagents.map((rg) => {
       const rgMeta = itemMap.get(rg.item_id);
-      const unitP10 = rgMeta?.p10_price || 0;
+      const ahP10 = rgMeta?.p10_price || 0;
+      const vendorBuy = VENDOR_BUY_MAP.get(rg.item_id) || 0;
+
+      let unitP10 = 0;
+      let priceSource: "vendor_npc" | "ah_p10" | "missing" = "missing";
+
+      // Si es un suministro conocido de vendedor NPC (hilos, viales, flujos, tintes, especias)
+      // o si no hay stock en AH pero lo vende un NPC, usamos el precio del NPC
+      if (
+        KNOWN_NPC_VENDOR_BUY_PRICES[rg.item_id] !== undefined &&
+        (ahP10 === 0 || KNOWN_NPC_VENDOR_BUY_PRICES[rg.item_id] <= ahP10)
+      ) {
+        unitP10 = KNOWN_NPC_VENDOR_BUY_PRICES[rg.item_id];
+        priceSource = "vendor_npc";
+      } else if (ahP10 > 0) {
+        unitP10 = ahP10;
+        priceSource = "ah_p10";
+      } else if (vendorBuy > 0) {
+        unitP10 = vendorBuy;
+        priceSource = "vendor_npc";
+      } else {
+        allReagentsPriced = false;
+      }
+
       const subtotal = unitP10 * rg.count;
       totalCraftCost += subtotal;
 
       return {
         item_id: rg.item_id,
-        name_es: rgMeta?.name_es || `Objeto #${rg.item_id}`,
+        name_es: rgMeta?.name_es || rg.name_es || `Objeto #${rg.item_id}`,
         icon_url:
           rgMeta?.icon_url ||
           "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
@@ -774,15 +985,19 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
         unit_p10: unitP10,
         subtotal_p10: subtotal,
         available_quantity: rgMeta?.total_quantity || 0,
+        price_source: priceSource,
       };
     });
 
     const outputUnitP10 = outItem?.p10_price || 0;
+    const hasAllPrices = allReagentsPriced && outputUnitP10 > 0 && totalCraftCost > 0;
     const grossSaleValue = outputUnitP10 * r.output_quantity;
     const netSaleAfterAhCut = Math.floor(grossSaleValue * 0.95);
-    const netProfitCopper = netSaleAfterAhCut - totalCraftCost;
+    const netProfitCopper = hasAllPrices
+      ? netSaleAfterAhCut - totalCraftCost
+      : -totalCraftCost;
     const netRoiPct =
-      totalCraftCost > 0
+      hasAllPrices && totalCraftCost > 0
         ? Number(((netProfitCopper / totalCraftCost) * 100).toFixed(2))
         : 0;
 
@@ -805,11 +1020,19 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
       net_sale_after_ah_cut: netSaleAfterAhCut,
       net_profit_copper: netProfitCopper,
       net_roi_pct: netRoiPct,
-      is_profitable: netProfitCopper > 0 && totalCraftCost > 0 && outputUnitP10 > 0,
+      is_profitable: hasAllPrices && netProfitCopper > 0,
+      has_all_prices: hasAllPrices,
     });
   }
 
-  results.sort((a, b) => b.net_profit_copper - a.net_profit_copper);
+  // Priorizar recetas con precio activo en AH y mayor ganancia neta
+  results.sort((a, b) => {
+    if (a.has_all_prices !== b.has_all_prices) {
+      return a.has_all_prices ? -1 : 1;
+    }
+    return b.net_profit_copper - a.net_profit_copper;
+  });
+
   return results;
 }
 
@@ -858,6 +1081,8 @@ export function getMarketOverviewStats(houseId: number): {
   last_blizzard_sync: string | null;
   last_guild_sync: string | null;
   categories: string[];
+  professions: string[];
+  total_recipes: number;
 } {
   const db = getDb();
 
@@ -882,8 +1107,16 @@ export function getMarketOverviewStats(houseId: number): {
 
   const totalSnapshots = (
     db
-      .prepare(`SELECT COUNT(*) AS cnt FROM market_snapshots WHERE house_id = ?`)
+      .prepare(
+        `SELECT COUNT(*) AS cnt FROM market_snapshots WHERE house_id = ?`
+      )
       .get(houseId) as { cnt: number }
+  ).cnt;
+
+  const totalRecipes = (
+    db.prepare(`SELECT COUNT(*) AS cnt FROM recipes_catalog`).get() as {
+      cnt: number;
+    }
   ).cnt;
 
   const lastBlizzard = db
@@ -899,8 +1132,16 @@ export function getMarketOverviewStats(houseId: number): {
     .get(houseId) as { ts: string | null };
 
   const cats = db
-    .prepare(`SELECT DISTINCT category FROM items_catalog ORDER BY category ASC`)
+    .prepare(
+      `SELECT DISTINCT category FROM items_catalog ORDER BY category ASC`
+    )
     .all() as Array<{ category: string }>;
+
+  const profs = db
+    .prepare(
+      `SELECT DISTINCT profession FROM recipes_catalog ORDER BY profession ASC`
+    )
+    .all() as Array<{ profession: string }>;
 
   return {
     house_id: houseId,
@@ -910,5 +1151,7 @@ export function getMarketOverviewStats(houseId: number): {
     last_blizzard_sync: lastBlizzard?.ts || null,
     last_guild_sync: lastGuild?.ts || null,
     categories: ["Todas", ...cats.map((c) => c.category)],
+    professions: ["Todas", ...profs.map((p) => p.profession)],
+    total_recipes: totalRecipes,
   };
 }

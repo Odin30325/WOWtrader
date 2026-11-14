@@ -1,4 +1,34 @@
 import seedItemsRaw from "./static-items-seed.json";
+import officialRecipesRaw from "./official-recipes-seed.json";
+
+export type ProfessionName =
+  | "Ingeniería"
+  | "Minería"
+  | "Alquimia"
+  | "Herrería"
+  | "Cocina"
+  | "Encantamiento"
+  | "Primeros auxilios"
+  | "Pesca"
+  | "Herboristería"
+  | "Peletería"
+  | "Desuello"
+  | "Sastrería";
+
+export const ALL_PROFESSIONS: ProfessionName[] = [
+  "Ingeniería",
+  "Minería",
+  "Alquimia",
+  "Herrería",
+  "Cocina",
+  "Sastrería",
+  "Peletería",
+  "Encantamiento",
+  "Primeros auxilios",
+  "Pesca",
+  "Herboristería",
+  "Desuello",
+];
 
 export interface CatalogItemRecord {
   item_id: number;
@@ -6,22 +36,71 @@ export interface CatalogItemRecord {
   icon_url: string;
   category: string;
   vendor_sell_price: number;
+  vendor_buy_price?: number;
 }
 
 export interface RecipeReagent {
   item_id: number;
   count: number;
+  name_es?: string;
 }
 
 export interface RecipeCatalogRecord {
   recipe_id: number;
   name_es: string;
-  profession: "Ingeniería" | "Minería";
+  profession: ProfessionName;
+  category_name: string;
   is_forever_exclusive: boolean;
   output_item_id: number;
   output_quantity: number;
   reagents: RecipeReagent[];
 }
+
+// Precios unitarios oficiales de compra en NPC Vendedor (en cobre) para suministros de profesión
+// Esto garantiza que si un hilo, vial, tinte, flujo o especia no está en la AH (o está inflado por revendedores),
+// el Laboratorio de Profesiones use el costo real del vendedor NPC.
+export const KNOWN_NPC_VENDOR_BUY_PRICES: Record<number, number> = {
+  // Viales (Alquimia / Pesca)
+  3371: 4,     // Vial vacío (20c por 5 = 4c c/u)
+  3372: 40,    // Vial emplomado (2s por 5 = 40c c/u)
+  8925: 500,   // Vial de cristal (25s por 5 = 5s c/u)
+  18256: 1500, // Vial imbuido
+  // Hilos y Tintes (Sastrería / Peletería / Ingeniería Forever)
+  2320: 10,    // Hilo burdo
+  2321: 100,   // Hilo fino
+  4291: 500,   // Hilo de seda
+  8343: 2000,  // Hilo pesado de seda
+  14341: 5000, // Hilo rúnico
+  2604: 50,    // Tinte rojo
+  2605: 50,    // Tinte verde
+  4340: 350,   // Tinte gris
+  4341: 500,   // Tinte amarillo
+  4342: 2500,  // Tinte púrpura
+  6260: 50,    // Tinte azul
+  6261: 1000,  // Tinte naranja
+  10290: 2500, // Tinte rosa
+  2324: 25,    // Lejía
+  // Nuevos Suministros de Vendedor en WoW: Forever (1.60.1_70399)
+  249409: 300,  // Tinte cerúleo (3s)
+  249410: 500,  // Ácido sulfúrico (5s)
+  249430: 1500, // Tinte magenta (15s)
+  249431: 1500, // Tinte verde esmeralda (15s)
+  249432: 1000, // Lija (10s)
+  // Herrería / Minería / Ingeniería
+  2880: 100,   // Flujo débil (1s)
+  3466: 2000,  // Flujo fuerte (20s)
+  3857: 500,   // Carbón (5s)
+  4399: 200,   // Empuñadura de madera (2s)
+  4400: 2000,  // Culata pesada (20s)
+  4470: 38,    // Madera simple
+  11291: 4500, // Madera de estrella
+  // Cocina y Peletería
+  2678: 10,    // Especias suaves
+  3713: 160,   // Especias calmantes
+  2692: 400,   // Especias picantes
+  4289: 50,    // Sal
+  159: 25,     // Agua de manantial refrescante
+};
 
 export function classifyItemCategory(
   itemId: number,
@@ -31,479 +110,285 @@ export function classifyItemCategory(
 ): string {
   const lowerName = (nameEs || "").toLowerCase();
   const lowerSub = (subclassEs || "").toLowerCase();
+  const lowerCls = (classEs || "").toLowerCase();
 
+  // 1. Cajones arrebatados y Libranzas de WoW: Forever
   if (
-    itemId >= 248682 &&
-    itemId <= 248715
+    (itemId >= 248682 && itemId <= 248715) ||
+    lowerName.includes("cajón arrebatado") ||
+    lowerName.includes("libranza de ")
   ) {
     return "Cajones Forever";
   }
 
+  // 2. Armas (Espadas, Hachas, Mazas, Dagas, Bastones, Arcos, Armas de fuego, Varitas, Escudos/Mano izq)
+  if (
+    lowerCls === "arma" ||
+    lowerSub.includes("espada") ||
+    lowerSub.includes("hacha") ||
+    lowerSub.includes("maza") ||
+    lowerSub.includes("daga") ||
+    lowerSub.includes("bastón") ||
+    lowerSub.includes("arco") ||
+    lowerSub.includes("arma de fuego") ||
+    lowerSub.includes("varita") ||
+    lowerSub.includes("arma de asta") ||
+    lowerSub.includes("arma de puño") ||
+    lowerSub.includes("ballesta")
+  ) {
+    return "Armas";
+  }
+
+  // 3. Armaduras y Equipo (Tela, Cuero, Malla, Placas, Escudos, Anillos, Amuletos, Abalorios)
+  if (
+    lowerCls === "armadura" ||
+    lowerSub === "malla" ||
+    lowerSub === "placas" ||
+    lowerSub === "escudo" ||
+    (lowerCls === "armadura" && (lowerSub === "tela" || lowerSub === "cuero"))
+  ) {
+    return "Armaduras";
+  }
+
+  // 4. Bolsas, Carcajes y Contenedores
+  if (
+    lowerCls === "contenedor" ||
+    lowerCls === "carcaj" ||
+    lowerSub.includes("bolsa") ||
+    lowerSub.includes("carcaj") ||
+    lowerName.startsWith("bolsa ") ||
+    lowerName.startsWith("faltriquera ") ||
+    lowerName.startsWith("mochila ")
+  ) {
+    return "Bolsas y Contenedores";
+  }
+
+  // 5. Recetas, Patrones, Diseños, Esquemas y Fórmulas
+  if (
+    lowerCls === "receta" ||
+    lowerName.startsWith("receta:") ||
+    lowerName.startsWith("patrón:") ||
+    lowerName.startsWith("diseño:") ||
+    lowerName.startsWith("esquema:") ||
+    lowerName.startsWith("fórmula:") ||
+    lowerName.startsWith("manual:")
+  ) {
+    return "Recetas y Patrones";
+  }
+
+  // 6. Proyectiles y Munición
+  if (lowerCls === "proyectil" || lowerSub === "bala" || lowerSub === "flecha") {
+    return "Proyectiles y Munición";
+  }
+
+  // 7. Minería (Menas, Barras, Piedras)
   if (
     lowerSub.includes("metal y piedra") ||
-    lowerName.includes("mena ") ||
-    lowerName.includes("barra de ") ||
-    lowerName.includes("piedra ")
+    lowerName.startsWith("mena ") ||
+    lowerName.startsWith("barra de ") ||
+    lowerName.startsWith("piedra ")
   ) {
     return "Minería";
   }
 
+  // 8. Ingeniería (Piezas, Explosivos, Dispositivos, Miras, C-GUR / SAF-T, EZ-Thro, Robots)
   if (
     lowerSub.includes("piezas") ||
     lowerSub.includes("explosivos") ||
     lowerSub.includes("dispositivo") ||
     lowerName.includes("c-gur") ||
     lowerName.includes("para tontos") ||
-    lowerName.includes("mira ") ||
-    lowerName.includes("robot de ") ||
-    lowerName.includes("tubo ") ||
+    lowerName.startsWith("mira ") ||
+    lowerName.startsWith("robot de ") ||
+    lowerName.startsWith("tubo ") ||
     lowerName.includes("granada") ||
     lowerName.includes("dinamita") ||
-    lowerName.includes("bomba")
+    lowerName.includes("bomba") ||
+    lowerName.includes("girocronátomo")
   ) {
     return "Ingeniería";
   }
 
+  // 9. Herboristería
   if (lowerSub.includes("hierbas") || lowerName.includes("semillas de hierbas")) {
     return "Herboristería";
   }
 
+  // 10. Alquimia y Pociones
   if (
     lowerSub.includes("pociones") ||
     lowerSub.includes("elixires") ||
-    lowerSub.includes("pergaminos") ||
-    lowerSub.includes("comida y bebida") ||
-    lowerSub.includes("cocina")
+    lowerSub.includes("frascos") ||
+    lowerName.startsWith("poción ") ||
+    lowerName.startsWith("elixir ") ||
+    lowerName.startsWith("frasco ")
   ) {
-    return "Consumibles";
+    return "Alquimia y Pociones";
   }
 
+  // 11. Cocina y Pesca
+  if (
+    lowerSub.includes("comida y bebida") ||
+    lowerSub.includes("cocina") ||
+    lowerName.includes("crudo") ||
+    lowerName.startsWith("filete ") ||
+    lowerName.startsWith("estofado ") ||
+    lowerName.startsWith("té ") ||
+    lowerName.startsWith("batido ")
+  ) {
+    return "Cocina y Pesca";
+  }
+
+  // 12. Primeros auxilios
+  if (
+    lowerName.startsWith("venda ") ||
+    lowerName.startsWith("cataplasma ") ||
+    lowerName.startsWith("torniquete ") ||
+    lowerName.startsWith("contraveneno ")
+  ) {
+    return "Primeros auxilios";
+  }
+
+  // 13. Encantamiento y Pergaminos
+  if (
+    lowerSub.includes("encantamiento") ||
+    lowerSub.includes("pergaminos") ||
+    lowerName.startsWith("pergamino ") ||
+    lowerName.startsWith("mota de ") ||
+    lowerName.startsWith("polvo ") ||
+    lowerName.startsWith("esencia ")
+  ) {
+    return "Encantamiento";
+  }
+
+  // 14. Sastrería y Peletería (Materiales textiles, cueros, pellejos, refuerzos)
   if (
     lowerSub.includes("tela") ||
     lowerSub.includes("cuero") ||
-    lowerName.includes("paño ") ||
-    lowerName.includes("cuero ") ||
-    lowerName.includes("pellejo ")
+    lowerName.startsWith("paño ") ||
+    lowerName.startsWith("madeja ") ||
+    lowerName.startsWith("cuero ") ||
+    lowerName.startsWith("pellejo ") ||
+    lowerName.startsWith("escama ") ||
+    lowerName.startsWith("refuerzo para armadura")
   ) {
     return "Sastrería y Peletería";
   }
 
-  if (lowerSub.includes("encantamiento")) {
-    return "Encantamiento";
-  }
-
-  return classEs && classEs !== "Otros" ? classEs : "Materiales y Otros";
+  return "Materiales y Otros";
 }
 
-export const INITIAL_ITEMS_CATALOG: CatalogItemRecord[] = (
-  seedItemsRaw as Array<{
+// Construir catálogo unificado combinando static-items-seed.json + ítems referenciados en official-recipes-seed.json
+function buildInitialCatalog(): CatalogItemRecord[] {
+  const map = new Map<number, CatalogItemRecord>();
+
+  const rawItems = seedItemsRaw as Array<{
     item_id: number;
     name_es: string;
     icon_url: string;
-    subclass: string;
-    class: string;
-    vendor_sell_price: number;
+    subclass?: string;
+    class?: string;
+    vendor_sell_price?: number;
+    vendor_buy_price?: number;
+  }>;
+
+  for (const row of rawItems) {
+    const id = Number(row.item_id);
+    const vendorBuy =
+      KNOWN_NPC_VENDOR_BUY_PRICES[id] ?? row.vendor_buy_price ?? 0;
+    map.set(id, {
+      item_id: id,
+      name_es: row.name_es,
+      icon_url:
+        row.icon_url ||
+        "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
+      category: classifyItemCategory(
+        id,
+        row.name_es,
+        row.subclass || "",
+        row.class || ""
+      ),
+      vendor_sell_price: row.vendor_sell_price || 0,
+      vendor_buy_price: vendorBuy,
+    });
+  }
+
+  const rawRecipes = officialRecipesRaw as Array<{
+    recipe_id: number;
+    name_es: string;
+    profession: string;
+    category_name?: string;
+    is_forever_exclusive: boolean;
+    output_item_id: number;
+    output_item_name?: string;
+    output_quantity: number;
+    reagents: Array<{ item_id: number; count: number; name_es?: string }>;
+  }>;
+
+  for (const rec of rawRecipes) {
+    const outId = Number(rec.output_item_id);
+    if (outId && !map.has(outId)) {
+      const nameEs = rec.output_item_name || rec.name_es;
+      map.set(outId, {
+        item_id: outId,
+        name_es: nameEs,
+        icon_url:
+          "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
+        category: classifyItemCategory(
+          outId,
+          nameEs,
+          rec.category_name || "",
+          rec.profession
+        ),
+        vendor_sell_price: 0,
+        vendor_buy_price: KNOWN_NPC_VENDOR_BUY_PRICES[outId] ?? 0,
+      });
+    }
+
+    for (const rg of rec.reagents || []) {
+      const rgId = Number(rg.item_id);
+      if (rgId && !map.has(rgId)) {
+        const rgName = rg.name_es || `Objeto #${rgId}`;
+        map.set(rgId, {
+          item_id: rgId,
+          name_es: rgName,
+          icon_url:
+            "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
+          category: classifyItemCategory(rgId, rgName, "", ""),
+          vendor_sell_price: 0,
+          vendor_buy_price: KNOWN_NPC_VENDOR_BUY_PRICES[rgId] ?? 0,
+        });
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+export const INITIAL_ITEMS_CATALOG: CatalogItemRecord[] = buildInitialCatalog();
+
+export const FOREVER_RECIPES_CATALOG: RecipeCatalogRecord[] = (
+  officialRecipesRaw as Array<{
+    recipe_id: number;
+    name_es: string;
+    profession: ProfessionName;
+    category_name?: string;
+    is_forever_exclusive: boolean;
+    output_item_id: number;
+    output_quantity: number;
+    reagents: Array<{ item_id: number; count: number; name_es?: string }>;
   }>
-).map((row) => ({
-  item_id: row.item_id,
-  name_es: row.name_es,
-  icon_url: row.icon_url,
-  category: classifyItemCategory(row.item_id, row.name_es, row.subclass, row.class),
-  vendor_sell_price: row.vendor_sell_price || 0,
+).map((r) => ({
+  recipe_id: Number(r.recipe_id),
+  name_es: r.name_es,
+  profession: r.profession,
+  category_name: r.category_name || r.profession,
+  is_forever_exclusive: Boolean(r.is_forever_exclusive),
+  output_item_id: Number(r.output_item_id),
+  output_quantity: Math.max(1, Number(r.output_quantity || 1)),
+  reagents: (r.reagents || []).map((rg) => ({
+    item_id: Number(rg.item_id),
+    count: Math.max(1, Number(rg.count || 1)),
+    name_es: rg.name_es,
+  })),
 }));
-
-export const FOREVER_RECIPES_CATALOG: RecipeCatalogRecord[] = [
-  // =========================================================================
-  // RECETAS EXCLUSIVAS DE WOW: FOREVER (1.60.1_70399) — INGENIERÍA & MINERÍA
-  // =========================================================================
-  {
-    recipe_id: 9001,
-    name_es: "Tiras C-GUR (SAF-T Tabs)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260784,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 2840, count: 1 }, // Barra de cobre
-      { item_id: 2589, count: 1 }, // Paño de lino
-    ],
-  },
-  {
-    recipe_id: 9002,
-    name_es: "Dinamita C-GUR (SAF-T Dynamite)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260792,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 260784, count: 1 }, // Tiras C-GUR
-      { item_id: 4359, count: 1 },   // Puñado de tornillos de cobre
-      { item_id: 2589, count: 1 },   // Paño de lino
-    ],
-  },
-  {
-    recipe_id: 9003,
-    name_es: "Bomba de cobre C-GUR (SAF-T Copper Bomb)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260793,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 2840, count: 2 },   // Barra de cobre
-      { item_id: 260784, count: 1 }, // Tiras C-GUR
-      { item_id: 4359, count: 1 },   // Puñado de tornillos de cobre
-    ],
-  },
-  {
-    recipe_id: 9004,
-    name_es: "Sobreveste para tontos (EZ-Thro Wrap)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260794,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 2592, count: 2 }, // Paño de lana
-      { item_id: 2318, count: 1 }, // Cuero ligero
-    ],
-  },
-  {
-    recipe_id: 9005,
-    name_es: "Bomba de cobre XL para tontos (EZ-Thro Copper Bomb XL)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260795,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 260793, count: 2 }, // Bomba de cobre C-GUR
-      { item_id: 260794, count: 1 }, // Sobreveste para tontos
-    ],
-  },
-  {
-    recipe_id: 9006,
-    name_es: "Bomba de bronce C-GUR (SAF-T Bronze Bomb)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260797,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 2841, count: 2 },   // Barra de bronce
-      { item_id: 4364, count: 1 },   // Pólvora gruesa
-      { item_id: 260784, count: 1 }, // Tiras C-GUR
-    ],
-  },
-  {
-    recipe_id: 9007,
-    name_es: "Mecha ignífuga para tontos (EZ-Thro Fireproof Fuse)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260801,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 4306, count: 2 }, // Paño de seda
-      { item_id: 4377, count: 1 }, // Pólvora pesada
-    ],
-  },
-  {
-    recipe_id: 9008,
-    name_es: "Granada para tontos (EZ-Thro Grenade)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260803,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 3575, count: 2 },   // Barra de hierro
-      { item_id: 4377, count: 2 },   // Pólvora pesada
-      { item_id: 260801, count: 1 }, // Mecha ignífuga para tontos
-    ],
-  },
-  {
-    recipe_id: 9009,
-    name_es: "Bomba C-GUR (SAF-T Bomb)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260805,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 3575, count: 2 }, // Barra de hierro
-      { item_id: 4377, count: 1 }, // Pólvora pesada
-      { item_id: 4306, count: 1 }, // Paño de seda
-    ],
-  },
-  {
-    recipe_id: 9010,
-    name_es: "Tubo C-GUR (SAF-T Tube)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260813,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 3860, count: 2 }, // Barra de mitril
-      { item_id: 4371, count: 1 }, // Tubo de bronce
-    ],
-  },
-  {
-    recipe_id: 9011,
-    name_es: "Granada de torio para tontos (EZ-Thro Thorium Grenade)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 260816,
-    output_quantity: 3,
-    reagents: [
-      { item_id: 12359, count: 3 },  // Barra de torio
-      { item_id: 15992, count: 3 },  // Pólvora densa
-      { item_id: 260801, count: 1 }, // Mecha ignífuga para tontos
-    ],
-  },
-  {
-    recipe_id: 9012,
-    name_es: "Robot de componentes (Reagent Bot — Forever)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 279950,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 3860, count: 4 }, // Barra de mitril
-      { item_id: 4382, count: 1 }, // Marco de bronce
-      { item_id: 4389, count: 1 }, // Girocronátomo
-    ],
-  },
-  {
-    recipe_id: 9013,
-    name_es: "Robot de reparación (Repair Bot — Forever)",
-    profession: "Ingeniería",
-    is_forever_exclusive: true,
-    output_item_id: 279949,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 12359, count: 6 }, // Barra de torio
-      { item_id: 16000, count: 1 }, // Tubo de torio
-      { item_id: 4389, count: 1 },  // Girocronátomo
-    ],
-  },
-  {
-    recipe_id: 9014,
-    name_es: "Fundir barra de torio pesada (Forever Mining)",
-    profession: "Minería",
-    is_forever_exclusive: true,
-    output_item_id: 251291,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 248815, count: 1 }, // Mena de torio pesada
-    ],
-  },
-  {
-    recipe_id: 9015,
-    name_es: "Fundir barra de azerotio (Forever Mining)",
-    profession: "Minería",
-    is_forever_exclusive: true,
-    output_item_id: 249726,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 12359, count: 2 }, // Barra de torio
-      { item_id: 3577, count: 1 },  // Barra de oro
-    ],
-  },
-
-  // =========================================================================
-  // RECETAS CLÁSICAS DE INGENIERÍA & MINERÍA EN WOW: FOREVER
-  // =========================================================================
-  {
-    recipe_id: 1001,
-    name_es: "Tubo de bronce",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 4371,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 2841, count: 2 }, // Barra de bronce
-    ],
-  },
-  {
-    recipe_id: 1002,
-    name_es: "Puñado de tornillos de cobre",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 4359,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 2840, count: 1 }, // Barra de cobre
-    ],
-  },
-  {
-    recipe_id: 1003,
-    name_es: "Tubo de cobre",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 4361,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 2840, count: 2 }, // Barra de cobre
-    ],
-  },
-  {
-    recipe_id: 1004,
-    name_es: "Modulador de cobre",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 4363,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 4359, count: 2 }, // Puñado de tornillos de cobre
-      { item_id: 2840, count: 1 }, // Barra de cobre
-      { item_id: 2589, count: 2 }, // Paño de lino
-    ],
-  },
-  {
-    recipe_id: 1005,
-    name_es: "Marco de bronce",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 4382,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 2841, count: 2 }, // Barra de bronce
-      { item_id: 2319, count: 1 }, // Cuero medio
-      { item_id: 2592, count: 1 }, // Paño de lana
-    ],
-  },
-  {
-    recipe_id: 1006,
-    name_es: "Granada de hierro",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 4390,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 3575, count: 1 }, // Barra de hierro
-      { item_id: 4377, count: 1 }, // Pólvora pesada
-      { item_id: 4306, count: 1 }, // Paño de seda
-    ],
-  },
-  {
-    recipe_id: 1007,
-    name_es: "Mira estándar",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 4406,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 4361, count: 1 }, // Tubo de cobre
-      { item_id: 4359, count: 1 }, // Puñado de tornillos de cobre
-    ],
-  },
-  {
-    recipe_id: 1008,
-    name_es: "Mira mortal",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 10546,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 10559, count: 1 }, // Tubo de mitril
-      { item_id: 3860, count: 2 },  // Barra de mitril
-    ],
-  },
-  {
-    recipe_id: 1009,
-    name_es: "Tubo de torio",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 16000,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 12359, count: 6 }, // Barra de torio
-    ],
-  },
-  {
-    recipe_id: 1010,
-    name_es: "Granada de torio",
-    profession: "Ingeniería",
-    is_forever_exclusive: false,
-    output_item_id: 15993,
-    output_quantity: 3,
-    reagents: [
-      { item_id: 16000, count: 1 }, // Tubo de torio
-      { item_id: 12359, count: 3 }, // Barra de torio
-      { item_id: 15992, count: 3 }, // Pólvora densa
-      { item_id: 14047, count: 3 }, // Paño rúnico
-    ],
-  },
-  {
-    recipe_id: 2001,
-    name_es: "Fundir cobre",
-    profession: "Minería",
-    is_forever_exclusive: false,
-    output_item_id: 2840,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 2770, count: 1 }, // Mena de cobre
-    ],
-  },
-  {
-    recipe_id: 2002,
-    name_es: "Fundir estaño",
-    profession: "Minería",
-    is_forever_exclusive: false,
-    output_item_id: 3576,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 2771, count: 1 }, // Mena de estaño
-    ],
-  },
-  {
-    recipe_id: 2003,
-    name_es: "Fundir bronce",
-    profession: "Minería",
-    is_forever_exclusive: false,
-    output_item_id: 2841,
-    output_quantity: 2,
-    reagents: [
-      { item_id: 2840, count: 1 }, // Barra de cobre
-      { item_id: 3576, count: 1 }, // Barra de estaño
-    ],
-  },
-  {
-    recipe_id: 2004,
-    name_es: "Fundir hierro",
-    profession: "Minería",
-    is_forever_exclusive: false,
-    output_item_id: 3575,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 2772, count: 1 }, // Mena de hierro
-    ],
-  },
-  {
-    recipe_id: 2005,
-    name_es: "Fundir acero",
-    profession: "Minería",
-    is_forever_exclusive: false,
-    output_item_id: 3859,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 3575, count: 1 }, // Barra de hierro
-    ],
-  },
-  {
-    recipe_id: 2006,
-    name_es: "Fundir mitril",
-    profession: "Minería",
-    is_forever_exclusive: false,
-    output_item_id: 3860,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 3858, count: 1 }, // Mena de mitril
-    ],
-  },
-  {
-    recipe_id: 2007,
-    name_es: "Fundir torio",
-    profession: "Minería",
-    is_forever_exclusive: false,
-    output_item_id: 12359,
-    output_quantity: 1,
-    reagents: [
-      { item_id: 10620, count: 1 }, // Mena de torio
-    ],
-  },
-];
