@@ -166,7 +166,7 @@ export function getDb(): Database.Database {
     CREATE TABLE IF NOT EXISTS items_catalog (
       item_id INTEGER PRIMARY KEY,
       name_es TEXT NOT NULL,
-      icon_url TEXT NOT NULL DEFAULT 'https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg',
+      icon_url TEXT NOT NULL DEFAULT 'https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg',
       category TEXT NOT NULL DEFAULT 'Otros',
       vendor_sell_price INTEGER NOT NULL DEFAULT 0
     );
@@ -258,6 +258,10 @@ function seedInitialCatalogIfNeeded(db: Database.Database): void {
       });
     }
 
+    db.prepare(
+      `UPDATE items_catalog SET icon_url = 'https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg' WHERE icon_url LIKE '%inv_misc_questionmark%'`
+    ).run();
+
     // Limpiar recetas manuales antiguas para dejar únicamente las recetas 100% oficiales de static-forever-us
     db.prepare(`DELETE FROM recipes_catalog`).run();
 
@@ -321,7 +325,7 @@ export function upsertMarketSnapshots(snapshots: MarketSnapshotRow[]): number {
 
   const ensureCatalogStub = db.prepare(`
     INSERT OR IGNORE INTO items_catalog (item_id, name_es, icon_url, category, vendor_sell_price)
-    VALUES (@item_id, @name_es, 'https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg', 'Materiales y Otros', 0)
+    VALUES (@item_id, @name_es, 'https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg', 'Materiales y Otros', 0)
   `);
 
   const upsertSnap = db.prepare(`
@@ -980,7 +984,7 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
         name_es: rgMeta?.name_es || rg.name_es || `Objeto #${rg.item_id}`,
         icon_url:
           rgMeta?.icon_url ||
-          "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
+          "https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg",
         count: rg.count,
         unit_p10: unitP10,
         subtotal_p10: subtotal,
@@ -1010,7 +1014,7 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
       output_name_es: outItem?.name_es || r.name_es,
       output_icon_url:
         outItem?.icon_url ||
-        "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
+        "https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg",
       output_quantity: r.output_quantity,
       output_unit_p10: outputUnitP10,
       output_market_volume: outItem?.total_quantity || 0,

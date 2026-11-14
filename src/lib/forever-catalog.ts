@@ -301,7 +301,7 @@ function buildInitialCatalog(): CatalogItemRecord[] {
       name_es: row.name_es,
       icon_url:
         row.icon_url ||
-        "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
+        "https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg",
       category: classifyItemCategory(
         id,
         row.name_es,
@@ -333,7 +333,7 @@ function buildInitialCatalog(): CatalogItemRecord[] {
         item_id: outId,
         name_es: nameEs,
         icon_url:
-          "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
+          "https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg",
         category: classifyItemCategory(
           outId,
           nameEs,
@@ -353,7 +353,7 @@ function buildInitialCatalog(): CatalogItemRecord[] {
           item_id: rgId,
           name_es: rgName,
           icon_url:
-            "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg",
+            "https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg",
           category: classifyItemCategory(rgId, rgName, "", ""),
           vendor_sell_price: 0,
           vendor_buy_price: KNOWN_NPC_VENDOR_BUY_PRICES[rgId] ?? 0,

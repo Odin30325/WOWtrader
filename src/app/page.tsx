@@ -171,6 +171,163 @@ const PROFESSIONS_LIST = [
   "Desuello",
 ];
 
+const FALLBACK_WOW_ICON =
+  "https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg";
+
+function resolveSafeIconUrl(url?: string): string {
+  if (!url || url.includes("inv_misc_questionmark")) {
+    return FALLBACK_WOW_ICON;
+  }
+  return url;
+}
+
+function SafeItemIcon({
+  src,
+  alt,
+  className,
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+}) {
+  return (
+    <img
+      src={resolveSafeIconUrl(src)}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      onError={(e) => {
+        const target = e.currentTarget;
+        if (target.src !== FALLBACK_WOW_ICON) {
+          target.src = FALLBACK_WOW_ICON;
+        }
+      }}
+      className={className}
+    />
+  );
+}
+
+function PaginationBar({
+  currentPage,
+  totalItems,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  itemLabel = "objetos",
+  accentColor = "sky",
+}: {
+  currentPage: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  itemLabel?: string;
+  accentColor?: "sky" | "amber";
+}) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIdx = totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const endIdx = Math.min(totalItems, safePage * pageSize);
+
+  const visiblePages: number[] = [];
+  const startPage = Math.max(1, safePage - 2);
+  const endPage = Math.min(totalPages, startPage + 4);
+  const adjustedStart = Math.max(1, endPage - 4);
+  for (let p = adjustedStart; p <= endPage; p++) {
+    visiblePages.push(p);
+  }
+
+  const activeBtnClass =
+    accentColor === "amber"
+      ? "bg-amber-500 text-slate-950 border-amber-400 font-bold"
+      : "bg-sky-500 text-slate-950 border-sky-400 font-bold";
+
+  return (
+    <div className="rounded-xl border border-slate-800 bg-[#0b1120] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+        <span>
+          Hoja{" "}
+          <span className="text-white font-semibold">{safePage}</span> de{" "}
+          <span className="text-white font-semibold">{totalPages}</span>
+        </span>
+        <span>·</span>
+        <span>
+          Mostrando{" "}
+          <span className="text-white font-semibold">
+            {startIdx}–{endIdx}
+          </span>{" "}
+          de{" "}
+          <span className="text-white font-semibold">
+            {totalItems.toLocaleString()}
+          </span>{" "}
+          {itemLabel}
+        </span>
+
+        <div className="flex items-center gap-1.5 ml-1">
+          <span className="text-slate-500">Ver:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
+            className="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-xs text-slate-200 font-semibold focus:outline-none focus:border-sky-500"
+          >
+            <option value={10}>10 por hoja</option>
+            <option value={20}>20 por hoja</option>
+            <option value={50}>50 por hoja</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={safePage <= 1}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-600 disabled:opacity-40 disabled:pointer-events-none transition"
+          title="Primera hoja"
+        >
+          « Primera
+        </button>
+        <button
+          onClick={() => onPageChange(safePage - 1)}
+          disabled={safePage <= 1}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-600 disabled:opacity-40 disabled:pointer-events-none transition"
+        >
+          ‹ Anterior
+        </button>
+
+        {visiblePages.map((p) => (
+          <button
+            key={p}
+            onClick={() => onPageChange(p)}
+            className={`min-w-[32px] px-2.5 py-1.5 rounded-lg text-xs border transition ${
+              p === safePage
+                ? activeBtnClass
+                : "bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-600"
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+
+        <button
+          onClick={() => onPageChange(safePage + 1)}
+          disabled={safePage >= totalPages}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-600 disabled:opacity-40 disabled:pointer-events-none transition"
+        >
+          Siguiente ›
+        </button>
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={safePage >= totalPages}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-600 disabled:opacity-40 disabled:pointer-events-none transition"
+          title="Última hoja"
+        >
+          Última »
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const SAMPLE_CLAN_LUA = `-- Escaneo rápido de ForeverMarketAudit (Clan Edition - TOC 106001)
 ForeverMarketAuditDB = {
   ["meta"] = {
@@ -252,6 +409,12 @@ export default function ForeverMarketDashboard() {
   const [itemDetail, setItemDetail] = useState<ItemDetailData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
 
+  // Paginación por hojas de 10 en 10 (Radar y Laboratorio)
+  const [radarPage, setRadarPage] = useState<number>(1);
+  const [radarPageSize, setRadarPageSize] = useState<number>(10);
+  const [labPage, setLabPage] = useState<number>(1);
+  const [labPageSize, setLabPageSize] = useState<number>(10);
+
   // Vista 3: Filtros de Laboratorio de Profesiones (12 Profesiones y Subprofesiones)
   const [profFilter, setProfFilter] = useState<string>("Todas");
   const [recipeSearchQuery, setRecipeSearchQuery] = useState<string>("");
@@ -314,8 +477,19 @@ export default function ForeverMarketDashboard() {
   );
 
   useEffect(() => {
+    setRadarPage(1);
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  useEffect(() => {
+    setLabPage(1);
+  }, [
+    profFilter,
+    recipeSearchQuery,
+    onlyForeverRecipes,
+    onlyProfitableRecipes,
+    onlyActiveAhRecipes,
+  ]);
 
   useEffect(() => {
     fetchItemDetail(selectedItemId);
@@ -432,23 +606,21 @@ export default function ForeverMarketDashboard() {
 
   const filteredProfessions = useMemo(() => {
     const q = recipeSearchQuery.trim().toLowerCase();
-    return professions
-      .filter((p) => {
-        if (profFilter !== "Todas" && p.profession !== profFilter) return false;
-        if (onlyForeverRecipes && !p.is_forever_exclusive) return false;
-        if (onlyProfitableRecipes && !p.is_profitable) return false;
-        if (onlyActiveAhRecipes && !p.has_all_prices && !q) return false;
-        if (q) {
-          const matchRecipe =
-            p.name_es.toLowerCase().includes(q) ||
-            p.output_name_es.toLowerCase().includes(q) ||
-            String(p.output_item_id).includes(q) ||
-            p.reagents.some((rg) => rg.name_es.toLowerCase().includes(q));
-          if (!matchRecipe) return false;
-        }
-        return true;
-      })
-      .slice(0, 120);
+    return professions.filter((p) => {
+      if (profFilter !== "Todas" && p.profession !== profFilter) return false;
+      if (onlyForeverRecipes && !p.is_forever_exclusive) return false;
+      if (onlyProfitableRecipes && !p.is_profitable) return false;
+      if (onlyActiveAhRecipes && !p.has_all_prices && !q) return false;
+      if (q) {
+        const matchRecipe =
+          p.name_es.toLowerCase().includes(q) ||
+          p.output_name_es.toLowerCase().includes(q) ||
+          String(p.output_item_id).includes(q) ||
+          p.reagents.some((rg) => rg.name_es.toLowerCase().includes(q));
+        if (!matchRecipe) return false;
+      }
+      return true;
+    });
   }, [
     professions,
     profFilter,
@@ -457,6 +629,23 @@ export default function ForeverMarketDashboard() {
     onlyActiveAhRecipes,
     recipeSearchQuery,
   ]);
+
+  const paginatedRadar = useMemo(() => {
+    const totalPages = Math.max(1, Math.ceil(radar.length / radarPageSize));
+    const safePage = Math.min(Math.max(1, radarPage), totalPages);
+    const start = (safePage - 1) * radarPageSize;
+    return radar.slice(start, start + radarPageSize);
+  }, [radar, radarPage, radarPageSize]);
+
+  const paginatedProfessions = useMemo(() => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredProfessions.length / labPageSize)
+    );
+    const safePage = Math.min(Math.max(1, labPage), totalPages);
+    const start = (safePage - 1) * labPageSize;
+    return filteredProfessions.slice(start, start + labPageSize);
+  }, [filteredProfessions, labPage, labPageSize]);
 
   // Calcular rango para colorear el Heatmap 7x24 en la Vista 2
   const heatmapValues =
@@ -769,14 +958,30 @@ export default function ForeverMarketDashboard() {
               </div>
 
               <div className="text-xs text-slate-400">
-                Mostrando{" "}
+                Total:{" "}
                 <span className="text-white font-semibold">{radar.length}</span>{" "}
-                objetos auditados · Haz clic en cualquiera para ver su{" "}
+                objetos · Haz clic en cualquiera para ver su{" "}
                 <span className="text-emerald-400 font-medium">
                   Curva 24h y Heatmap
                 </span>
               </div>
             </div>
+
+            {/* Paginación Superior del Radar (10 en 10) */}
+            {!loadingDashboard && radar.length > 0 && (
+              <PaginationBar
+                currentPage={radarPage}
+                totalItems={radar.length}
+                pageSize={radarPageSize}
+                onPageChange={setRadarPage}
+                onPageSizeChange={(size) => {
+                  setRadarPageSize(size);
+                  setRadarPage(1);
+                }}
+                itemLabel="objetos"
+                accentColor="sky"
+              />
+            )}
 
             {/* Tabla del Radar Intradía */}
             <div className="rounded-xl border border-slate-800 bg-[#0b1120] overflow-hidden shadow-xl">
@@ -810,7 +1015,7 @@ export default function ForeverMarketDashboard() {
                           Calculando oportunidades de arbitraje intradía...
                         </td>
                       </tr>
-                    ) : radar.length === 0 ? (
+                    ) : paginatedRadar.length === 0 ? (
                       <tr>
                         <td
                           colSpan={8}
@@ -820,7 +1025,7 @@ export default function ForeverMarketDashboard() {
                         </td>
                       </tr>
                     ) : (
-                      radar.map((item) => (
+                      paginatedRadar.map((item) => (
                         <tr
                           key={item.item_id}
                           onClick={() => handleOpenItemDetail(item.item_id)}
@@ -829,10 +1034,10 @@ export default function ForeverMarketDashboard() {
                           {/* Objeto */}
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
-                              <img
+                              <SafeItemIcon
                                 src={item.icon_url}
                                 alt={item.name_es}
-                                className="w-9 h-9 rounded-lg border border-slate-700 group-hover:border-sky-400 transition object-cover bg-slate-950"
+                                className="w-9 h-9 rounded-lg border border-slate-700 group-hover:border-sky-400 transition object-cover bg-slate-950 shrink-0"
                               />
                               <div>
                                 <div className="font-semibold text-white group-hover:text-sky-300 transition flex items-center gap-2 flex-wrap">
@@ -941,6 +1146,22 @@ export default function ForeverMarketDashboard() {
                 </table>
               </div>
             </div>
+
+            {/* Paginación Inferior del Radar (10 en 10) */}
+            {!loadingDashboard && radar.length > 0 && (
+              <PaginationBar
+                currentPage={radarPage}
+                totalItems={radar.length}
+                pageSize={radarPageSize}
+                onPageChange={setRadarPage}
+                onPageSizeChange={(size) => {
+                  setRadarPageSize(size);
+                  setRadarPage(1);
+                }}
+                itemLabel="objetos"
+                accentColor="sky"
+              />
+            )}
           </section>
         )}
 
@@ -953,10 +1174,10 @@ export default function ForeverMarketDashboard() {
             <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 {itemDetail?.item && (
-                  <img
+                  <SafeItemIcon
                     src={itemDetail.item.icon_url}
                     alt={itemDetail.item.name_es}
-                    className="w-12 h-12 rounded-xl border border-sky-500/40"
+                    className="w-12 h-12 rounded-xl border border-sky-500/40 object-cover bg-slate-950 shrink-0"
                   />
                 )}
                 <div>
@@ -1308,18 +1529,33 @@ export default function ForeverMarketDashboard() {
               </div>
 
               <div className="text-xs text-slate-400">
-                Mostrando{" "}
+                Total filtrado:{" "}
                 <span className="text-white font-semibold">
-                  {filteredProfessions.length}
+                  {filteredProfessions.length.toLocaleString()}
                 </span>{" "}
-                recetas oficiales (Datos directos de{" "}
-                <code className="text-amber-300">static-forever-us</code>)
+                recetas oficiales (<code className="text-amber-300">static-forever-us</code>)
               </div>
             </div>
 
-            {/* Grid de Recetas */}
+            {/* Paginación Superior del Laboratorio (10 en 10) */}
+            {filteredProfessions.length > 0 && (
+              <PaginationBar
+                currentPage={labPage}
+                totalItems={filteredProfessions.length}
+                pageSize={labPageSize}
+                onPageChange={setLabPage}
+                onPageSizeChange={(size) => {
+                  setLabPageSize(size);
+                  setLabPage(1);
+                }}
+                itemLabel="recetas"
+                accentColor="amber"
+              />
+            )}
+
+            {/* Grid de Recetas (Paginado 10 por hoja) */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredProfessions.map((rec) => (
+              {paginatedProfessions.map((rec) => (
                 <div
                   key={rec.recipe_id}
                   className={`rounded-xl border p-4 flex flex-col justify-between transition ${
@@ -1337,10 +1573,10 @@ export default function ForeverMarketDashboard() {
                         }
                         className="flex items-center gap-3 cursor-pointer group"
                       >
-                        <img
+                        <SafeItemIcon
                           src={rec.output_icon_url}
                           alt={rec.output_name_es}
-                          className="w-11 h-11 rounded-lg border border-slate-700 group-hover:border-amber-400 transition"
+                          className="w-11 h-11 rounded-lg border border-slate-700 group-hover:border-amber-400 transition object-cover bg-slate-950 shrink-0"
                         />
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -1396,10 +1632,10 @@ export default function ForeverMarketDashboard() {
                           className="flex items-center justify-between text-xs bg-slate-900/70 hover:bg-slate-800/80 px-2.5 py-1.5 rounded-lg cursor-pointer transition"
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <img
+                            <SafeItemIcon
                               src={rg.icon_url}
                               alt={rg.name_es}
-                              className="w-5 h-5 rounded shrink-0"
+                              className="w-5 h-5 rounded shrink-0 object-cover bg-slate-950"
                             />
                             <span className="text-slate-200 font-medium truncate">
                               {rg.count}x {rg.name_es}
@@ -1462,6 +1698,22 @@ export default function ForeverMarketDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* Paginación Inferior del Laboratorio (10 en 10) */}
+            {filteredProfessions.length > 0 && (
+              <PaginationBar
+                currentPage={labPage}
+                totalItems={filteredProfessions.length}
+                pageSize={labPageSize}
+                onPageChange={setLabPage}
+                onPageSizeChange={(size) => {
+                  setLabPageSize(size);
+                  setLabPage(1);
+                }}
+                itemLabel="recetas"
+                accentColor="amber"
+              />
+            )}
           </section>
         )}
 

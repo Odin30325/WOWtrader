@@ -223,7 +223,7 @@ export async function enrichMissingCatalogItemsFromBlizzard(
           };
 
           let iconUrl =
-            "https://render.worldofwarcraft.com/forever-us/icons/56/inv_misc_questionmark.jpg";
+            "https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg";
           if (mediaRes.ok) {
             const mediaData = (await mediaRes.json()) as {
               assets?: Array<{ key: string; value: string }>;
