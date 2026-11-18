@@ -98,6 +98,12 @@ export interface ProfessionRecipeAnalysis {
   output_quantity: number;
   output_unit_p10: number;
   output_market_volume: number;
+  output_num_listings: number;
+  est_sold_per_hour: number;
+  est_sold_per_day: number;
+  sales_velocity_tier: "fast" | "medium" | "slow";
+  est_hourly_profit_copper: number;
+  opportunity_score: number;
   reagents: Array<{
     item_id: number;
     name_es: string;
@@ -924,8 +930,10 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
         c.item_id,
         c.name_es,
         c.icon_url,
+        c.category,
         COALESCE(s.p10_price, 0) AS p10_price,
-        COALESCE(s.total_quantity, 0) AS total_quantity
+        COALESCE(s.total_quantity, 0) AS total_quantity,
+        COALESCE(s.num_listings, 0) AS num_listings
       FROM items_catalog c
       LEFT JOIN latest_per_item l ON c.item_id = l.item_id
       LEFT JOIN market_snapshots s
@@ -936,10 +944,26 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
     item_id: number;
     name_es: string;
     icon_url: string;
+    category: string;
     p10_price: number;
     total_quantity: number;
+    num_listings: number;
   }>;
 
+  const swingRows = db
+    .prepare(
+      `
+      SELECT
+        item_id,
+        MAX(total_quantity) - MIN(total_quantity) AS qty_swing
+      FROM market_snapshots
+      WHERE house_id = ?
+      GROUP BY item_id
+    `
+    )
+    .all(houseId) as Array<{ item_id: number; qty_swing: number }>;
+
+  const swingMap = new Map(swingRows.map((r) => [r.item_id, r.qty_swing]));
   const itemMap = new Map(latestPricesRows.map((r) => [r.item_id, r]));
   const results: ProfessionRecipeAnalysis[] = [];
 
@@ -994,6 +1018,57 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
     });
 
     const outputUnitP10 = outItem?.p10_price || 0;
+    const outputVolume = outItem?.total_quantity || 0;
+    const outputListings = outItem?.num_listings || 0;
+    const outputCategory = outItem?.category || "";
+    const qtySwing = swingMap.get(r.output_item_id) || 0;
+
+    // Estimación del Flujo de Ventas (Unidades vendidas por Hora y por Día)
+    // Combinamos la absorción histórica entre cortes (qtySwing) con la profundidad de lotes activos (num_listings y total_quantity)
+    let estSoldPerDay = 0;
+    if (outputVolume > 0 || qtySwing > 0) {
+      const avgStack = outputListings > 0 ? outputVolume / outputListings : 1;
+      const isEquipment =
+        (outputCategory === "Armas" || outputCategory === "Armaduras") &&
+        avgStack <= 1.15;
+
+      const observedDailyFromSwing = Math.round(qtySwing * 1.4);
+      let depthEstimatedDaily = 0;
+
+      if (isEquipment) {
+        // Equipamiento individual (1 ud por lote): rota en función de la cantidad de publicaciones activas y accesibilidad de precio
+        const priceFactor =
+          outputUnitP10 > 500000 ? 0.35 : outputUnitP10 > 100000 ? 0.55 : 0.85;
+        depthEstimatedDaily = Number(
+          Math.max(
+            0.5,
+            (outputListings * 0.7 + Math.min(outputVolume, 25) * 0.2) *
+              priceFactor
+          ).toFixed(1)
+        );
+      } else {
+        // Consumibles, munición, explosivos, piezas de ingeniería, materiales, bolsas, pociones, comida
+        depthEstimatedDaily = Math.max(
+          1,
+          Math.round(outputVolume * 0.42 + outputListings * 2.1)
+        );
+      }
+
+      estSoldPerDay = Math.max(observedDailyFromSwing, depthEstimatedDaily);
+    }
+
+    const estSoldPerHour =
+      estSoldPerDay > 0
+        ? Number(Math.max(0.1, estSoldPerDay / 24).toFixed(1))
+        : 0;
+
+    const salesVelocityTier: "fast" | "medium" | "slow" =
+      estSoldPerDay >= 20
+        ? "fast"
+        : estSoldPerDay >= 4
+        ? "medium"
+        : "slow";
+
     const hasAllPrices = allReagentsPriced && outputUnitP10 > 0 && totalCraftCost > 0;
     const grossSaleValue = outputUnitP10 * r.output_quantity;
     const netSaleAfterAhCut = Math.floor(grossSaleValue * 0.95);
@@ -1004,6 +1079,22 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
       hasAllPrices && totalCraftCost > 0
         ? Number(((netProfitCopper / totalCraftCost) * 100).toFixed(2))
         : 0;
+
+    const profitPerOutputUnit =
+      r.output_quantity > 0 ? netProfitCopper / r.output_quantity : netProfitCopper;
+    const estHourlyProfitCopper =
+      hasAllPrices && netProfitCopper > 0 && estSoldPerHour > 0
+        ? Math.round(profitPerOutputUnit * estSoldPerHour)
+        : 0;
+
+    // Índice de Oportunidad Combinado (Equilibrio entre Alto ROI %, Ganancia Neta y Alto Flujo de Ventas)
+    let opportunityScore = 0;
+    if (hasAllPrices && netProfitCopper > 0 && netRoiPct > 0 && estSoldPerDay > 0) {
+      const roiFactor = Math.min(250, Math.max(1, netRoiPct));
+      const flowFactor = Math.pow(estSoldPerDay, 0.55);
+      const profitGoldFactor = Math.log10(10 + Math.max(0, netProfitCopper));
+      opportunityScore = Math.round(roiFactor * flowFactor * profitGoldFactor);
+    }
 
     results.push({
       recipe_id: r.recipe_id,
@@ -1017,7 +1108,13 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
         "https://render.worldofwarcraft.com/forever-us/icons/56/134400.jpg",
       output_quantity: r.output_quantity,
       output_unit_p10: outputUnitP10,
-      output_market_volume: outItem?.total_quantity || 0,
+      output_market_volume: outputVolume,
+      output_num_listings: outputListings,
+      est_sold_per_hour: estSoldPerHour,
+      est_sold_per_day: estSoldPerDay,
+      sales_velocity_tier: salesVelocityTier,
+      est_hourly_profit_copper: estHourlyProfitCopper,
+      opportunity_score: opportunityScore,
       reagents: reagentDetails,
       total_craft_cost: totalCraftCost,
       gross_sale_value: grossSaleValue,
@@ -1029,10 +1126,13 @@ export function getProfessionsLab(houseId: number): ProfessionRecipeAnalysis[] {
     });
   }
 
-  // Priorizar recetas con precio activo en AH y mayor ganancia neta
+  // Por defecto ordenar por Mejor Oportunidad (Equilibrio Alto ROI + Alto Flujo de Venta)
   results.sort((a, b) => {
     if (a.has_all_prices !== b.has_all_prices) {
       return a.has_all_prices ? -1 : 1;
+    }
+    if (b.opportunity_score !== a.opportunity_score) {
+      return b.opportunity_score - a.opportunity_score;
     }
     return b.net_profit_copper - a.net_profit_copper;
   });

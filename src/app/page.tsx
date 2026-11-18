@@ -62,6 +62,12 @@ interface ProfessionRecipe {
   output_quantity: number;
   output_unit_p10: number;
   output_market_volume: number;
+  output_num_listings: number;
+  est_sold_per_hour: number;
+  est_sold_per_day: number;
+  sales_velocity_tier: "fast" | "medium" | "slow";
+  est_hourly_profit_copper: number;
+  opportunity_score: number;
   reagents: Array<{
     item_id: number;
     name_es: string;
@@ -415,13 +421,19 @@ export default function ForeverMarketDashboard() {
   const [labPage, setLabPage] = useState<number>(1);
   const [labPageSize, setLabPageSize] = useState<number>(10);
 
-  // Vista 3: Filtros de Laboratorio de Profesiones (12 Profesiones y Subprofesiones)
+  // Vista 3: Filtros y Ordenamiento del Laboratorio de Profesiones (12 Profesiones y Subprofesiones)
   const [profFilter, setProfFilter] = useState<string>("Todas");
   const [recipeSearchQuery, setRecipeSearchQuery] = useState<string>("");
   const [onlyForeverRecipes, setOnlyForeverRecipes] = useState<boolean>(false);
   const [onlyProfitableRecipes, setOnlyProfitableRecipes] =
     useState<boolean>(false);
   const [onlyActiveAhRecipes, setOnlyActiveAhRecipes] = useState<boolean>(true);
+  const [labSortBy, setLabSortBy] = useState<
+    "opportunity" | "sales_flow" | "roi" | "hourly_profit" | "net_profit"
+  >("opportunity");
+  const [labVelocityFilter, setLabVelocityFilter] = useState<
+    "all" | "fast" | "medium_or_fast"
+  >("all");
 
   // Vista 4: Zona del Clan (Uploader Drag & Drop)
   const [clanPlayerName, setClanPlayerName] = useState<string>("Odin");
@@ -489,6 +501,8 @@ export default function ForeverMarketDashboard() {
     onlyForeverRecipes,
     onlyProfitableRecipes,
     onlyActiveAhRecipes,
+    labSortBy,
+    labVelocityFilter,
   ]);
 
   useEffect(() => {
@@ -606,11 +620,20 @@ export default function ForeverMarketDashboard() {
 
   const filteredProfessions = useMemo(() => {
     const q = recipeSearchQuery.trim().toLowerCase();
-    return professions.filter((p) => {
+    const list = professions.filter((p) => {
       if (profFilter !== "Todas" && p.profession !== profFilter) return false;
       if (onlyForeverRecipes && !p.is_forever_exclusive) return false;
       if (onlyProfitableRecipes && !p.is_profitable) return false;
       if (onlyActiveAhRecipes && !p.has_all_prices && !q) return false;
+      if (labVelocityFilter === "fast" && p.sales_velocity_tier !== "fast") {
+        return false;
+      }
+      if (
+        labVelocityFilter === "medium_or_fast" &&
+        p.sales_velocity_tier === "slow"
+      ) {
+        return false;
+      }
       if (q) {
         const matchRecipe =
           p.name_es.toLowerCase().includes(q) ||
@@ -621,6 +644,46 @@ export default function ForeverMarketDashboard() {
       }
       return true;
     });
+
+    list.sort((a, b) => {
+      if (a.has_all_prices !== b.has_all_prices) {
+        return a.has_all_prices ? -1 : 1;
+      }
+      if (labSortBy === "opportunity") {
+        if ((b.opportunity_score || 0) !== (a.opportunity_score || 0)) {
+          return (b.opportunity_score || 0) - (a.opportunity_score || 0);
+        }
+        return b.net_profit_copper - a.net_profit_copper;
+      }
+      if (labSortBy === "sales_flow") {
+        if ((b.est_sold_per_day || 0) !== (a.est_sold_per_day || 0)) {
+          return (b.est_sold_per_day || 0) - (a.est_sold_per_day || 0);
+        }
+        return b.net_roi_pct - a.net_roi_pct;
+      }
+      if (labSortBy === "roi") {
+        if (b.net_roi_pct !== a.net_roi_pct) {
+          return b.net_roi_pct - a.net_roi_pct;
+        }
+        return (b.est_sold_per_day || 0) - (a.est_sold_per_day || 0);
+      }
+      if (labSortBy === "hourly_profit") {
+        if (
+          (b.est_hourly_profit_copper || 0) !==
+          (a.est_hourly_profit_copper || 0)
+        ) {
+          return (
+            (b.est_hourly_profit_copper || 0) -
+            (a.est_hourly_profit_copper || 0)
+          );
+        }
+        return b.net_profit_copper - a.net_profit_copper;
+      }
+      // net_profit
+      return b.net_profit_copper - a.net_profit_copper;
+    });
+
+    return list;
   }, [
     professions,
     profFilter,
@@ -628,6 +691,8 @@ export default function ForeverMarketDashboard() {
     onlyProfitableRecipes,
     onlyActiveAhRecipes,
     recipeSearchQuery,
+    labSortBy,
+    labVelocityFilter,
   ]);
 
   const paginatedRadar = useMemo(() => {
@@ -1481,9 +1546,10 @@ export default function ForeverMarketDashboard() {
               ))}
             </div>
 
-            {/* Barra de Filtros y Buscador de Recetas */}
-            <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-3 flex-1">
+            {/* Barra de Filtros, Ordenamiento por Flujo/ROI y Buscador de Recetas */}
+            <div className="rounded-xl border border-slate-800 bg-[#0b1120] p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {/* Buscador */}
                 <div className="relative min-w-[260px] flex-1 max-w-md">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -1495,45 +1561,114 @@ export default function ForeverMarketDashboard() {
                   />
                 </div>
 
-                <label className="inline-flex items-center gap-2 text-xs text-purple-300 bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={onlyForeverRecipes}
-                    onChange={(e) => setOnlyForeverRecipes(e.target.checked)}
-                    className="rounded accent-purple-500"
-                  />
-                  <span>Solo Recetas Nuevas de Forever</span>
-                </label>
+                {/* Selector de Ordenamiento: Mejor Oportunidad (ROI + Flujo), Mayor Flujo, Mayor ROI, etc. */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex items-center gap-2 bg-slate-900 border border-amber-500/35 rounded-lg px-3 py-2">
+                    <TrendingUp className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="text-xs text-slate-300 font-medium whitespace-nowrap">
+                      Ordenar por:
+                    </span>
+                    <select
+                      value={labSortBy}
+                      onChange={(e) =>
+                        setLabSortBy(
+                          e.target.value as
+                            | "opportunity"
+                            | "sales_flow"
+                            | "roi"
+                            | "hourly_profit"
+                            | "net_profit"
+                        )
+                      }
+                      className="bg-slate-800 text-xs font-semibold text-amber-300 rounded px-2 py-1 focus:outline-none border border-amber-500/30"
+                    >
+                      <option value="opportunity">
+                        🔥 Mejor Oportunidad (Alto ROI + Alto Flujo de Venta)
+                      </option>
+                      <option value="sales_flow">
+                        ⚡ Mayor Flujo de Ventas (Más uds/hora y uds/día)
+                      </option>
+                      <option value="roi">
+                        📈 Mayor ROI % (Mayor porcentaje de retorno)
+                      </option>
+                      <option value="hourly_profit">
+                        ⏱️ Mayor Ganancia / Hora (Flujo × Ganancia Neta)
+                      </option>
+                      <option value="net_profit">
+                        💰 Mayor Ganancia Neta por Crafteo Individual
+                      </option>
+                    </select>
+                  </div>
 
-                <label className="inline-flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={onlyProfitableRecipes}
-                    onChange={(e) =>
-                      setOnlyProfitableRecipes(e.target.checked)
-                    }
-                    className="rounded accent-emerald-500"
-                  />
-                  <span>Solo Ganancia Positiva Hoy</span>
-                </label>
-
-                <label className="inline-flex items-center gap-2 text-xs text-sky-300 bg-sky-500/10 border border-sky-500/30 rounded-lg px-3 py-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={onlyActiveAhRecipes}
-                    onChange={(e) => setOnlyActiveAhRecipes(e.target.checked)}
-                    className="rounded accent-sky-500"
-                  />
-                  <span>Solo con Stock en Subasta</span>
-                </label>
+                  {/* Filtro de Velocidad de Venta */}
+                  <div className="flex items-center gap-2 bg-slate-900 border border-emerald-500/30 rounded-lg px-3 py-2">
+                    <Flame className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="text-xs text-slate-300 font-medium whitespace-nowrap">
+                      Flujo de Venta:
+                    </span>
+                    <select
+                      value={labVelocityFilter}
+                      onChange={(e) =>
+                        setLabVelocityFilter(
+                          e.target.value as "all" | "fast" | "medium_or_fast"
+                        )
+                      }
+                      className="bg-slate-800 text-xs font-semibold text-emerald-300 rounded px-2 py-1 focus:outline-none border border-emerald-500/30"
+                    >
+                      <option value="all">Todos los flujos</option>
+                      <option value="fast">
+                        ⚡ Solo Venta Rápida (≥ 20 uds/día)
+                      </option>
+                      <option value="medium_or_fast">
+                        ⏱️ Flujo Medio o Rápido (≥ 4 uds/día)
+                      </option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div className="text-xs text-slate-400">
-                Total filtrado:{" "}
-                <span className="text-white font-semibold">
-                  {filteredProfessions.length.toLocaleString()}
-                </span>{" "}
-                recetas oficiales (<code className="text-amber-300">static-forever-us</code>)
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/70">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <label className="inline-flex items-center gap-2 text-xs text-purple-300 bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={onlyForeverRecipes}
+                      onChange={(e) => setOnlyForeverRecipes(e.target.checked)}
+                      className="rounded accent-purple-500"
+                    />
+                    <span>Solo Recetas Nuevas de Forever</span>
+                  </label>
+
+                  <label className="inline-flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={onlyProfitableRecipes}
+                      onChange={(e) =>
+                        setOnlyProfitableRecipes(e.target.checked)
+                      }
+                      className="rounded accent-emerald-500"
+                    />
+                    <span>Solo Ganancia Positiva Hoy</span>
+                  </label>
+
+                  <label className="inline-flex items-center gap-2 text-xs text-sky-300 bg-sky-500/10 border border-sky-500/30 rounded-lg px-3 py-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={onlyActiveAhRecipes}
+                      onChange={(e) => setOnlyActiveAhRecipes(e.target.checked)}
+                      className="rounded accent-sky-500"
+                    />
+                    <span>Solo con Stock en Subasta</span>
+                  </label>
+                </div>
+
+                <div className="text-xs text-slate-400">
+                  Total filtrado:{" "}
+                  <span className="text-white font-semibold">
+                    {filteredProfessions.length.toLocaleString()}
+                  </span>{" "}
+                  recetas oficiales (<code className="text-amber-300">static-forever-us</code>)
+                </div>
               </div>
             </div>
 
@@ -1555,148 +1690,197 @@ export default function ForeverMarketDashboard() {
 
             {/* Grid de Recetas (Paginado 10 por hoja) */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {paginatedProfessions.map((rec) => (
-                <div
-                  key={rec.recipe_id}
-                  className={`rounded-xl border p-4 flex flex-col justify-between transition ${
-                    rec.is_profitable
-                      ? "border-emerald-500/30 bg-gradient-to-b from-[#0b1324] to-[#09101d]"
-                      : "border-slate-800 bg-[#0b1120]"
-                  }`}
-                >
-                  <div>
-                    {/* Cabecera de la Receta */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div
-                        onClick={() =>
-                          handleOpenItemDetail(rec.output_item_id)
-                        }
-                        className="flex items-center gap-3 cursor-pointer group"
-                      >
-                        <SafeItemIcon
-                          src={rec.output_icon_url}
-                          alt={rec.output_name_es}
-                          className="w-11 h-11 rounded-lg border border-slate-700 group-hover:border-amber-400 transition object-cover bg-slate-950 shrink-0"
-                        />
-                        <div>
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <h3 className="font-bold text-sm text-white group-hover:text-amber-300 transition">
-                              {rec.name_es}
-                            </h3>
-                            {rec.is_forever_exclusive && (
-                              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                                FOREVER
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-slate-400 mt-0.5">
-                            <span className="text-amber-300/90 font-medium">
-                              {rec.profession}
-                            </span>{" "}
-                            · Produce{" "}
-                            <span className="text-white font-semibold">
-                              {rec.output_quantity}x
-                            </span>{" "}
-                            ({rec.output_market_volume.toLocaleString()} uds en
-                            AH)
-                          </div>
-                        </div>
-                      </div>
+              {paginatedProfessions.map((rec) => {
+                const velocityTier = rec.sales_velocity_tier || "slow";
+                const estHour = rec.est_sold_per_hour ?? 0;
+                const estDay = rec.est_sold_per_day ?? 0;
+                const listingsCount = rec.output_num_listings ?? 0;
 
-                      <span
-                        className={`px-2.5 py-1 rounded-full font-mono text-xs font-bold whitespace-nowrap ${
-                          !rec.has_all_prices
-                            ? "bg-slate-800 text-slate-400 border border-slate-700"
-                            : rec.is_profitable
-                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                            : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
-                        }`}
-                      >
-                        {!rec.has_all_prices
-                          ? "Sin Stock AH"
-                          : `${
-                              rec.net_roi_pct > 0 ? "+" : ""
-                            }${rec.net_roi_pct.toFixed(1)}% ROI`}
-                      </span>
-                    </div>
-
-                    {/* Lista de Materiales (Reagents) */}
-                    <div className="mt-3.5 pt-3 border-t border-slate-800/80 space-y-2">
-                      <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
-                        Materiales Requeridos (Suelo P10 / NPC Vendedor):
-                      </div>
-                      {rec.reagents.map((rg) => (
+                return (
+                  <div
+                    key={rec.recipe_id}
+                    className={`rounded-xl border p-4 flex flex-col justify-between transition ${
+                      rec.is_profitable
+                        ? "border-emerald-500/30 bg-gradient-to-b from-[#0b1324] to-[#09101d]"
+                        : "border-slate-800 bg-[#0b1120]"
+                    }`}
+                  >
+                    <div>
+                      {/* Cabecera de la Receta */}
+                      <div className="flex items-start justify-between gap-3">
                         <div
-                          key={rg.item_id}
-                          onClick={() => handleOpenItemDetail(rg.item_id)}
-                          className="flex items-center justify-between text-xs bg-slate-900/70 hover:bg-slate-800/80 px-2.5 py-1.5 rounded-lg cursor-pointer transition"
+                          onClick={() =>
+                            handleOpenItemDetail(rec.output_item_id)
+                          }
+                          className="flex items-center gap-3 cursor-pointer group"
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <SafeItemIcon
-                              src={rg.icon_url}
-                              alt={rg.name_es}
-                              className="w-5 h-5 rounded shrink-0 object-cover bg-slate-950"
-                            />
-                            <span className="text-slate-200 font-medium truncate">
-                              {rg.count}x {rg.name_es}
-                            </span>
-                            {rg.price_source === "vendor_npc" && (
-                              <span
-                                title="Se compra directamente a vendedor NPC"
-                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0"
-                              >
-                                <Store className="w-2.5 h-2.5" />
-                                NPC
+                          <SafeItemIcon
+                            src={rec.output_icon_url}
+                            alt={rec.output_name_es}
+                            className="w-11 h-11 rounded-lg border border-slate-700 group-hover:border-amber-400 transition object-cover bg-slate-950 shrink-0"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h3 className="font-bold text-sm text-white group-hover:text-amber-300 transition">
+                                {rec.name_es}
+                              </h3>
+                              {rec.is_forever_exclusive && (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                  FOREVER
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-0.5">
+                              <span className="text-amber-300/90 font-medium">
+                                {rec.profession}
+                              </span>{" "}
+                              · Produce{" "}
+                              <span className="text-white font-semibold">
+                                {rec.output_quantity}x
+                              </span>{" "}
+                              ({rec.output_market_volume.toLocaleString()} uds en{" "}
+                              {listingsCount} lotes AH)
+                            </div>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`px-2.5 py-1 rounded-full font-mono text-xs font-bold whitespace-nowrap ${
+                            !rec.has_all_prices
+                              ? "bg-slate-800 text-slate-400 border border-slate-700"
+                              : rec.is_profitable
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                              : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                          }`}
+                        >
+                          {!rec.has_all_prices
+                            ? "Sin Stock AH"
+                            : `${
+                                rec.net_roi_pct > 0 ? "+" : ""
+                              }${rec.net_roi_pct.toFixed(1)}% ROI`}
+                        </span>
+                      </div>
+
+                      {/* Bloque de Flujo de Venta Estimado (Uds/Hora y Uds/Día) */}
+                      <div className="mt-3 rounded-lg border border-slate-800/90 bg-slate-950/60 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-semibold text-[11px] border ${
+                              velocityTier === "fast"
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                : velocityTier === "medium"
+                                ? "bg-sky-500/20 text-sky-300 border-sky-500/35"
+                                : "bg-slate-800 text-slate-400 border-slate-700"
+                            }`}
+                          >
+                            {velocityTier === "fast"
+                              ? "⚡ Venta Rápida"
+                              : velocityTier === "medium"
+                              ? "⏱️ Flujo Medio"
+                              : "🐢 Venta Lenta"}
+                          </span>
+                          <span className="text-slate-300 font-mono">
+                            ~<strong className="text-white">{estHour}</strong>{" "}
+                            uds/h
+                          </span>
+                        </div>
+
+                        <div className="text-slate-400 font-mono text-[11px]">
+                          Flujo 24h:{" "}
+                          <span className="text-amber-300 font-semibold">
+                            ~{estDay.toLocaleString()} uds/día
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Lista de Materiales (Reagents) */}
+                      <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-2">
+                        <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                          Materiales Requeridos (Suelo P10 / NPC Vendedor):
+                        </div>
+                        {rec.reagents.map((rg) => (
+                          <div
+                            key={rg.item_id}
+                            onClick={() => handleOpenItemDetail(rg.item_id)}
+                            className="flex items-center justify-between text-xs bg-slate-900/70 hover:bg-slate-800/80 px-2.5 py-1.5 rounded-lg cursor-pointer transition"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <SafeItemIcon
+                                src={rg.icon_url}
+                                alt={rg.name_es}
+                                className="w-5 h-5 rounded shrink-0 object-cover bg-slate-950"
+                              />
+                              <span className="text-slate-200 font-medium truncate">
+                                {rg.count}x {rg.name_es}
+                              </span>
+                              {rg.price_source === "vendor_npc" && (
+                                <span
+                                  title="Se compra directamente a vendedor NPC"
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 shrink-0"
+                                >
+                                  <Store className="w-2.5 h-2.5" />
+                                  NPC
+                                </span>
+                              )}
+                            </div>
+                            {rg.subtotal_p10 > 0 ? (
+                              <WowMoney copper={rg.subtotal_p10} />
+                            ) : (
+                              <span className="text-slate-500 text-[11px]">
+                                Sin stock
                               </span>
                             )}
                           </div>
-                          {rg.subtotal_p10 > 0 ? (
-                            <WowMoney copper={rg.subtotal_p10} />
-                          ) : (
-                            <span className="text-slate-500 text-[11px]">
-                              Sin stock
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Resumen Financiero de la Receta */}
-                  <div className="mt-4 pt-3 border-t border-slate-800/90 space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>Costo Total Materiales:</span>
-                      <WowMoney copper={rec.total_craft_cost} />
-                    </div>
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>
-                        Venta Neta ({rec.output_quantity}x tras 5% AH):
-                      </span>
-                      {rec.net_sale_after_ah_cut > 0 ? (
-                        <WowMoney copper={rec.net_sale_after_ah_cut} />
-                      ) : (
-                        <span className="text-slate-500">Sin ofertas AH</span>
+                    {/* Resumen Financiero de la Receta */}
+                    <div className="mt-4 pt-3 border-t border-slate-800/90 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between text-slate-400">
+                        <span>Costo Total Materiales:</span>
+                        <WowMoney copper={rec.total_craft_cost} />
+                      </div>
+                      <div className="flex items-center justify-between text-slate-400">
+                        <span>
+                          Venta Neta ({rec.output_quantity}x tras 5% AH):
+                        </span>
+                        {rec.net_sale_after_ah_cut > 0 ? (
+                          <WowMoney copper={rec.net_sale_after_ah_cut} />
+                        ) : (
+                          <span className="text-slate-500">Sin ofertas AH</span>
+                        )}
+                      </div>
+                      {rec.is_profitable && rec.est_hourly_profit_copper > 0 && (
+                        <div className="flex items-center justify-between text-emerald-300/90 text-[11px] bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-1">
+                          <span>Flujo Ganancia Est. / Hora:</span>
+                          <WowMoney
+                            copper={rec.est_hourly_profit_copper}
+                            showSign
+                            compact
+                          />
+                        </div>
                       )}
-                    </div>
-                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 font-semibold">
-                      <button
-                        onClick={() =>
-                          handleOpenItemDetail(rec.output_item_id)
-                        }
-                        className="text-sky-400 hover:text-sky-300 text-[11px] flex items-center gap-1 underline-offset-2 hover:underline"
-                      >
-                        <BarChart3 className="w-3.5 h-3.5" />
-                        Ver Curva 24h del Producto
-                      </button>
-                      <WowMoney
-                        copper={rec.net_profit_copper}
-                        showSign
-                        className="text-sm font-bold"
-                      />
+                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 font-semibold">
+                        <button
+                          onClick={() =>
+                            handleOpenItemDetail(rec.output_item_id)
+                          }
+                          className="text-sky-400 hover:text-sky-300 text-[11px] flex items-center gap-1 underline-offset-2 hover:underline"
+                        >
+                          <BarChart3 className="w-3.5 h-3.5" />
+                          Ver Curva 24h del Producto
+                        </button>
+                        <WowMoney
+                          copper={rec.net_profit_copper}
+                          showSign
+                          className="text-sm font-bold"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Paginación Inferior del Laboratorio (10 en 10) */}
